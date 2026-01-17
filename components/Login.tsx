@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { CloudSync, Lock, Mail, ArrowRight, AlertCircle, Loader2, AlertTriangle, KeyRound, ArrowLeft, CheckCircle2, FlaskConical } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { MOCK_USERS } from '../constants';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -28,7 +28,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Step 1: Check against Mock Database FIRST for development convenience
+    // Step 1: Mock Credentials check (prioritize for easy development/testing)
     const mockUser = MOCK_USERS.find(u => u.email === email && u.password === password);
     if (mockUser) {
       onLogin(mockUser);
@@ -36,7 +36,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Step 2: If no mock match, try Supabase Auth if configured
+    // Step 2: Supabase Auth check
     if (isSupabaseConfigured) {
       try {
         const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -45,27 +45,36 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         });
 
         if (authError) {
-          setError(authError.message === 'Invalid login credentials' ? 'Invalid credentials. If you are using Mock data, ensure you are using the correct test email/password.' : authError.message);
+          setError(authError.message === 'Invalid login credentials' ? 'Invalid credentials. If this is your first time, check your Supabase Auth dashboard.' : authError.message);
         } else if (data.user) {
+          // Check for profile table (might not exist yet)
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', data.user.id)
-            .single();
+            .maybeSingle();
 
           if (profile) {
             onLogin(profile);
           } else {
-            setError('User authenticated but profile record not found in database.');
+            // DATABASE INITIALIZATION FLOW:
+            // Allow login to access the setup tab if the profile is missing
+            onLogin({
+              id: data.user.id,
+              name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Cloud Admin',
+              email: data.user.email || '',
+              role: data.user.email === 'super@sweaterflow.com' ? UserRole.SUPER_ADMIN : UserRole.USER,
+              department: 'All'
+            });
           }
         }
       } catch (err) {
-        setError('An unexpected error occurred during cloud authentication.');
+        setError('Connection error. Ensure your Supabase project is active.');
       } finally {
         setIsLoading(false);
       }
     } else {
-      setError('Invalid local credentials. Try: super@sweaterflow.com / password123');
+      setError('System restricted. Use super@sweaterflow.com / password123 for local demo.');
       setIsLoading(false);
     }
   };
@@ -83,7 +92,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
     } else {
       const user = MOCK_USERS.find(u => u.email === email);
-      if (user) setSuccess(`MOCK MODE: Your password is "${user.password}"`);
+      if (user) setSuccess(`DEMO MODE: Password is "${user.password}"`);
       else setError('Mock email not found.');
       setIsLoading(false);
     }

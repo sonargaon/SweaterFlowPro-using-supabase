@@ -58,7 +58,7 @@ const App: React.FC = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        fetchUserProfile(session.user);
       } else {
         setLoading(false);
       }
@@ -68,7 +68,7 @@ const App: React.FC = () => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        fetchUserProfile(session.user);
       } else {
         setCurrentUser(null);
         setLoading(false);
@@ -80,20 +80,34 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (authUser: any) => {
     try {
+      // Try to get profile
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId)
-        .single();
+        .eq('id', authUser.id)
+        .maybeSingle();
 
       if (data) {
         setCurrentUser(data);
         fetchAllData();
+      } else {
+        // ERROR FIX: If profile is not found (likely DB not setup), 
+        // create a temporary session user so they can access 'System Setup'
+        console.warn("Profile not found in database. Using temporary session user.");
+        setCurrentUser({
+          id: authUser.id,
+          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Cloud User',
+          email: authUser.email || '',
+          role: authUser.email === 'super@sweaterflow.com' ? UserRole.SUPER_ADMIN : UserRole.USER,
+          department: 'All'
+        });
+        // Try to fetch data anyway (might fail if tables don't exist)
+        fetchAllData();
       }
     } catch (err) {
-      console.error('Error fetching profile:', err);
+      console.error('Error in fetchUserProfile:', err);
     } finally {
       setLoading(false);
     }
@@ -102,150 +116,67 @@ const App: React.FC = () => {
   const fetchAllData = async () => {
     if (!isSupabaseConfigured) return;
     
-    setLoading(true);
-    const [
-      { data: ordersData },
-      { data: purchasesData },
-      { data: customersData },
-      { data: suppliersData },
-      { data: transactionsData },
-      { data: samplesData },
-      { data: inspectionsData },
-      { data: linkingData },
-      { data: profilesData }
-    ] = await Promise.all([
-      supabase.from('orders').select('*').order('created_at', { ascending: false }),
-      supabase.from('purchases').select('*').order('date', { ascending: false }),
-      supabase.from('customers').select('*').order('name', { ascending: true }),
-      supabase.from('suppliers').select('*').order('name', { ascending: true }),
-      supabase.from('transactions').select('*').order('date', { ascending: false }),
-      supabase.from('samples').select('*').order('style_number', { ascending: true }),
-      supabase.from('inspections').select('*').order('date', { ascending: false }),
-      supabase.from('linking').select('*').order('date', { ascending: false }),
-      supabase.from('profiles').select('*').order('name', { ascending: true })
-    ]);
+    try {
+      const [
+        { data: ordersData },
+        { data: purchasesData },
+        { data: customersData },
+        { data: suppliersData },
+        { data: transactionsData },
+        { data: samplesData },
+        { data: inspectionsData },
+        { data: linkingData },
+        { data: profilesData }
+      ] = await Promise.all([
+        supabase.from('orders').select('*').order('created_at', { ascending: false }),
+        supabase.from('purchases').select('*').order('date', { ascending: false }),
+        supabase.from('customers').select('*').order('name', { ascending: true }),
+        supabase.from('suppliers').select('*').order('name', { ascending: true }),
+        supabase.from('transactions').select('*').order('date', { ascending: false }),
+        supabase.from('samples').select('*').order('style_number', { ascending: true }),
+        supabase.from('inspections').select('*').order('date', { ascending: false }),
+        supabase.from('linking').select('*').order('date', { ascending: false }),
+        supabase.from('profiles').select('*').order('name', { ascending: true })
+      ]);
 
-    // Map snake_case database fields back to camelCase types
-    if (ordersData) {
-      setOrders(ordersData.map((o: any) => ({
-        id: o.id,
-        orderNumber: o.order_number,
-        customerId: o.customer_id,
-        style: o.style,
-        color: o.color,
-        quantity: o.quantity,
-        unitPrice: o.unit_price,
-        currentDepartment: o.current_department as Department,
-        status: o.status,
-        startDate: o.start_date,
-        dueDate: o.due_date,
-        progress: o.progress,
-        yarnDetails: o.yarn_details
+      if (ordersData) setOrders(ordersData.map((o: any) => ({
+        id: o.id, orderNumber: o.order_number, customerId: o.customer_id, style: o.style, color: o.color, quantity: o.quantity, unitPrice: o.unit_price, currentDepartment: o.current_department, status: o.status, startDate: o.start_date, dueDate: o.due_date, progress: o.progress, yarnDetails: o.yarn_details
       })));
-    }
-    
-    if (purchasesData) {
-      // Fix: Mapped properties in fetchAllData for purchasesData to use camelCase keys matching PurchaseOrder interface
-      setPurchases(purchasesData.map((p: any) => ({
-        id: p.id,
-        poNumber: p.po_number,
-        supplierId: p.supplier_id,
-        itemType: p.item_type,
-        description: p.description,
-        quantity: p.quantity,
-        unit: p.unit,
-        totalAmount: p.total_amount,
-        status: p.status,
-        date: p.date,
-        styleNumber: p.style_number,
-        color: p.color,
-        lotNumber: p.lot_number,
-        ratePerUnit: p.rate_per_unit,
-        paymentDate: p.payment_date,
-        paymentRef: p.payment_ref
+      
+      if (purchasesData) setPurchases(purchasesData.map((p: any) => ({
+        id: p.id, poNumber: p.po_number, supplierId: p.supplier_id, itemType: p.item_type, description: p.description, quantity: p.quantity, unit: p.unit, totalAmount: p.total_amount, status: p.status, date: p.date, styleNumber: p.style_number, color: p.color, lotNumber: p.lot_number, ratePerUnit: p.rate_per_unit, paymentDate: p.payment_date, paymentRef: p.payment_ref
       })));
-    }
 
-    if (customersData) setCustomers(customersData);
-    if (suppliersData) setSuppliers(suppliersData);
-    
-    if (transactionsData) {
-      // Fix: Mapped style_numbers to styleNumbers for Transaction interface
-      setTransactions(transactionsData.map((t: any) => ({
-        id: t.id,
-        date: t.date,
-        type: t.type,
-        entityId: t.entity_id,
-        entityName: t.entity_name,
-        amount: t.amount,
-        method: t.method,
-        reference: t.reference,
-        styleNumbers: t.style_numbers
+      if (customersData) setCustomers(customersData.map((c: any) => ({
+        id: c.id, name: c.name, email: c.email, phone: c.phone, address: c.address, totalOrders: c.total_orders, balance: c.balance
       })));
-    }
 
-    if (samplesData) {
-      setSamples(samplesData.map((s: any) => ({
-        id: s.id,
-        styleNumber: s.style_number,
-        status: s.status,
-        yarnType: s.yarn_type,
-        yarnCount: s.yarn_count,
-        yarnRequiredLbs: s.yarn_required_lbs,
-        yarnPricePerLbs: s.yarn_price_per_lbs,
-        knittingTime: s.knitting_time,
-        knittingCost: s.knitting_cost,
-        linkingCost: s.linking_cost,
-        trimmingMendingCost: s.trimming_mending_cost,
-        sewingCosting: s.sewing_costing,
-        washingCost: s.washing_cost,
-        pqcCosting: s.pqc_costing,
-        ironCosting: s.iron_costing,
-        getupCosting: s.getup_costing,
-        packingCosting: s.packing_costing,
-        boilerGas: s.boiler_gas,
-        overheadCost: s.overhead_cost
+      if (suppliersData) setSuppliers(suppliersData.map((s: any) => ({
+        id: s.id, name: s.name, contactPerson: s.contact_person, category: s.category, balance: s.balance
       })));
-    }
-
-    if (inspectionsData) {
-      // Fix: Mapped rejection_rate to rejectionRate for InspectionRecord interface
-      setInspections(inspectionsData.map((i: any) => ({
-        id: i.id,
-        date: i.date,
-        operatorId: i.operator_id,
-        machineNo: i.machine_no,
-        buyerName: i.buyer_name,
-        styleNumber: i.style_number,
-        color: i.color,
-        totalDelivered: i.total_delivered,
-        knittingCompletedQty: i.knitting_completed_qty,
-        qualityPassed: i.quality_passed,
-        rejected: i.rejected,
-        rejectionRate: i.rejection_rate,
-        orderNumber: i.order_number
+      
+      if (transactionsData) setTransactions(transactionsData.map((t: any) => ({
+        id: t.id, date: t.date, type: t.type, entityId: t.entity_id, entityName: t.entity_name, amount: t.amount, method: t.method, reference: t.reference, styleNumbers: t.style_numbers
       })));
-    }
 
-    if (linkingData) {
-      // Fix: Mapped completed_qty to completedQty for LinkingRecord interface
-      setLinkingRecords(linkingData.map((l: any) => ({
-        id: l.id,
-        date: l.date,
-        operatorId: l.operator_id,
-        buyerName: l.buyer_name,
-        styleNumber: l.style_number,
-        orderNumber: l.order_number,
-        color: l.color,
-        totalQuantity: l.total_quantity,
-        operatorCompletedQty: l.operator_completed_qty,
-        completedQty: l.completed_qty
+      if (samplesData) setSamples(samplesData.map((s: any) => ({
+        id: s.id, styleNumber: s.style_number, status: s.status, yarnType: s.yarn_type, yarnCount: s.yarn_count, yarnRequiredLbs: s.yarn_required_lbs, yarnPricePerLbs: s.yarn_price_per_lbs, knittingTime: s.knitting_time, knittingCost: s.knitting_cost, linkingCost: s.linking_cost, trimmingMendingCost: s.trimming_mending_cost, sewingCosting: s.sewing_costing, washingCost: s.washing_cost, pqcCosting: s.pqc_costing, ironCosting: s.iron_costing, getupCosting: s.getup_costing, packingCosting: s.packing_costing, boilerGas: s.boiler_gas, overheadCost: s.overhead_cost
       })));
-    }
 
-    if (profilesData) setUsers(profilesData);
-    
-    setLoading(false);
+      if (inspectionsData) setInspections(inspectionsData.map((i: any) => ({
+        id: i.id, date: i.date, operatorId: i.operator_id, machineNo: i.machine_no, buyerName: i.buyer_name, styleNumber: i.style_number, color: i.color, totalDelivered: i.total_delivered, knittingCompletedQty: i.knitting_completed_qty, qualityPassed: i.quality_passed, rejected: i.rejected, rejectionRate: i.rejection_rate, orderNumber: i.order_number
+      })));
+
+      if (linkingData) setLinkingRecords(linkingData.map((l: any) => ({
+        id: l.id, date: l.date, operatorId: l.operator_id, buyerName: l.buyer_name, styleNumber: l.style_number, orderNumber: l.order_number, color: l.color, totalQuantity: l.total_quantity, operatorCompletedQty: l.operator_completed_qty, completedQty: l.completed_qty
+      })));
+
+      if (profilesData) setUsers(profilesData);
+    } catch (err) {
+      console.error("Data fetch error - tables might not exist yet:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -273,8 +204,7 @@ const App: React.FC = () => {
         yarn_details: newOrder.yarnDetails
       };
       const { error } = await supabase.from('orders').insert([dbOrder]);
-      if (error) console.error('Supabase error:', error);
-      else fetchAllData();
+      if (!error) fetchAllData();
     } else {
       setOrders(prev => [newOrder, ...prev]);
     }
@@ -352,7 +282,6 @@ const App: React.FC = () => {
 
   const handleAddSample = async (newSample: SampleType) => {
     if (isSupabaseConfigured) {
-      // Corrected property access to use camelCase from the SampleType interface
       const dbSample = {
         id: newSample.id,
         style_number: newSample.styleNumber,
@@ -383,7 +312,13 @@ const App: React.FC = () => {
 
   const handleAddCustomer = async (newCustomer: Customer) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('customers').insert([newCustomer]);
+      const { error } = await supabase.from('customers').insert([{
+        id: newCustomer.id,
+        name: newCustomer.name,
+        email: newCustomer.email,
+        phone: newCustomer.phone,
+        address: newCustomer.address
+      }]);
       if (!error) fetchAllData();
     } else {
       setCustomers(prev => [newCustomer, ...prev]);
@@ -392,7 +327,12 @@ const App: React.FC = () => {
 
   const handleAddSupplier = async (newSupplier: Supplier) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('suppliers').insert([newSupplier]);
+      const { error } = await supabase.from('suppliers').insert([{
+        id: newSupplier.id,
+        name: newSupplier.name,
+        contact_person: newSupplier.contactPerson,
+        category: newSupplier.category
+      }]);
       if (!error) fetchAllData();
     } else {
       setSuppliers(prev => [newSupplier, ...prev]);
@@ -425,7 +365,6 @@ const App: React.FC = () => {
 
   const handleAddLinking = async (l: LinkingRecord) => {
     if (isSupabaseConfigured) {
-      // Fix: Mapped property values to camelCase counterparts (l.orderNumber, l.completedQty) to fix LinkingRecord type error
       const dbLinking = {
         id: l.id,
         date: l.date,
@@ -447,7 +386,6 @@ const App: React.FC = () => {
 
   const handleAddUser = async (newUser: User) => {
     if (isSupabaseConfigured) {
-      // Create profile in DB
       const { error } = await supabase.from('profiles').insert([{
         id: newUser.id,
         name: newUser.name,
