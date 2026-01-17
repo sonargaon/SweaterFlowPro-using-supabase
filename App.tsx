@@ -28,6 +28,7 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<BusinessModule>('dashboard');
   const [loading, setLoading] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
   
   // Business Data State
   const [orders, setOrders] = useState<ProductionOrder[]>([]);
@@ -41,40 +42,45 @@ const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setOrders(MOCK_ORDERS);
-      setPurchases(MOCK_PURCHASES);
-      setCustomers(MOCK_CUSTOMERS);
-      setSuppliers(MOCK_SUPPLIERS);
-      setTransactions(MOCK_TRANSACTIONS);
-      setSamples(MOCK_SAMPLES);
-      setInspections(MOCK_INSPECTIONS);
-      setLinkingRecords(MOCK_LINKING);
-      setUsers(MOCK_USERS);
-      setLoading(false);
-      return;
-    }
-
-    const checkUser = async () => {
+    const bootstrap = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        if (!isSupabaseConfigured) {
+          console.info("Bootstrapping with Mock Data...");
+          setOrders(MOCK_ORDERS);
+          setPurchases(MOCK_PURCHASES);
+          setCustomers(MOCK_CUSTOMERS);
+          setSuppliers(MOCK_SUPPLIERS);
+          setTransactions(MOCK_TRANSACTIONS);
+          setSamples(MOCK_SAMPLES);
+          setInspections(MOCK_INSPECTIONS);
+          setLinkingRecords(MOCK_LINKING);
+          setUsers(MOCK_USERS);
+          setLoading(false);
+          return;
+        }
+
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+
         if (session?.user) {
-          fetchUserProfile(session.user);
+          await fetchUserProfile(session.user);
         } else {
           setLoading(false);
         }
-      } catch (e) {
-        console.error("Auth session check failed", e);
+      } catch (err: any) {
+        console.error("Critical Initialization Error:", err);
+        setInitError(err.message || "Failed to connect to authentication server.");
         setLoading(false);
       }
     };
 
-    checkUser();
+    bootstrap();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         fetchUserProfile(session.user);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
         setLoading(false);
       }
@@ -95,20 +101,20 @@ const App: React.FC = () => {
 
       if (data) {
         setCurrentUser(data);
-        fetchAllData();
       } else {
-        // Resilient fallback for first-time cloud setup
+        // Fallback for new projects/first run
         setCurrentUser({
           id: authUser.id,
-          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Cloud Operator',
+          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Cloud Admin',
           email: authUser.email || '',
           role: authUser.email === 'super@sweaterflow.com' ? UserRole.SUPER_ADMIN : UserRole.USER,
           department: 'All'
         });
-        fetchAllData();
       }
+      // Always try to fetch business data regardless of profile success
+      await fetchAllData();
     } catch (err) {
-      console.error('Resilient User Profile Catch:', err);
+      console.warn("User profile fetch failed, proceeding with default permissions.", err);
       setLoading(false);
     }
   };
@@ -117,17 +123,7 @@ const App: React.FC = () => {
     if (!isSupabaseConfigured) return;
     
     try {
-      const [
-        { data: ordersData },
-        { data: purchasesData },
-        { data: customersData },
-        { data: suppliersData },
-        { data: transactionsData },
-        { data: samplesData },
-        { data: inspectionsData },
-        { data: linkingData },
-        { data: profilesData }
-      ] = await Promise.all([
+      const fetchers = [
         supabase.from('orders').select('*').order('created_at', { ascending: false }),
         supabase.from('purchases').select('*').order('date', { ascending: false }),
         supabase.from('customers').select('*').order('name', { ascending: true }),
@@ -137,43 +133,47 @@ const App: React.FC = () => {
         supabase.from('inspections').select('*').order('date', { ascending: false }),
         supabase.from('linking').select('*').order('date', { ascending: false }),
         supabase.from('profiles').select('*').order('name', { ascending: true })
-      ]);
+      ];
 
-      if (ordersData) setOrders(ordersData.map((o: any) => ({
+      const results = await Promise.all(fetchers);
+
+      const [ordersRes, purchasesRes, customersRes, suppliersRes, transactionsRes, samplesRes, inspectionsRes, linkingRes, profilesRes] = results;
+
+      if (ordersRes.data) setOrders(ordersRes.data.map((o: any) => ({
         id: o.id, orderNumber: o.order_number, customerId: o.customer_id, style: o.style, color: o.color, quantity: o.quantity, unitPrice: o.unit_price, currentDepartment: o.current_department, status: o.status, startDate: o.start_date, dueDate: o.due_date, progress: o.progress, yarnDetails: o.yarn_details
       })));
       
-      if (purchasesData) setPurchases(purchasesData.map((p: any) => ({
+      if (purchasesRes.data) setPurchases(purchasesRes.data.map((p: any) => ({
         id: p.id, poNumber: p.po_number, supplierId: p.supplier_id, itemType: p.item_type, description: p.description, quantity: p.quantity, unit: p.unit, totalAmount: p.total_amount, status: p.status, date: p.date, styleNumber: p.style_number, color: p.color, lotNumber: p.lot_number, ratePerUnit: p.rate_per_unit, paymentDate: p.payment_date, paymentRef: p.payment_ref
       })));
 
-      if (customersData) setCustomers(customersData.map((c: any) => ({
+      if (customersRes.data) setCustomers(customersRes.data.map((c: any) => ({
         id: c.id, name: c.name, email: c.email, phone: c.phone, address: c.address, totalOrders: c.total_orders, balance: c.balance
       })));
 
-      if (suppliersData) setSuppliers(suppliersData.map((s: any) => ({
+      if (suppliersRes.data) setSuppliers(suppliersRes.data.map((s: any) => ({
         id: s.id, name: s.name, contactPerson: s.contact_person, category: s.category, balance: s.balance
       })));
       
-      if (transactionsData) setTransactions(transactionsData.map((t: any) => ({
+      if (transactionsRes.data) setTransactions(transactionsRes.data.map((t: any) => ({
         id: t.id, date: t.date, type: t.type, entityId: t.entity_id, entityName: t.entity_name, amount: t.amount, method: t.method, reference: t.reference, styleNumbers: t.style_numbers
       })));
 
-      if (samplesData) setSamples(samplesData.map((s: any) => ({
+      if (samplesRes.data) setSamples(samplesRes.data.map((s: any) => ({
         id: s.id, styleNumber: s.style_number, status: s.status, yarnType: s.yarn_type, yarnCount: s.yarn_count, yarnRequiredLbs: s.yarn_required_lbs, yarnPricePerLbs: s.yarn_price_per_lbs, knittingTime: s.knitting_time, knittingCost: s.knitting_cost, linkingCost: s.linking_cost, trimmingMendingCost: s.trimming_mending_cost, sewingCosting: s.sewing_costing, washingCost: s.washing_cost, pqcCosting: s.pqc_costing, ironCosting: s.iron_costing, getupCosting: s.getup_costing, packingCosting: s.packing_costing, boilerGas: s.boiler_gas, overheadCost: s.overhead_cost
       })));
 
-      if (inspectionsData) setInspections(inspectionsData.map((i: any) => ({
+      if (inspectionsRes.data) setInspections(inspectionsRes.data.map((i: any) => ({
         id: i.id, date: i.date, operatorId: i.operator_id, machineNo: i.machine_no, buyerName: i.buyer_name, styleNumber: i.style_number, color: i.color, totalDelivered: i.total_delivered, knittingCompletedQty: i.knitting_completed_qty, qualityPassed: i.quality_passed, rejected: i.rejected, rejectionRate: i.rejection_rate, orderNumber: i.order_number
       })));
 
-      if (linkingData) setLinkingRecords(linkingData.map((l: any) => ({
+      if (linkingRes.data) setLinkingRecords(linkingRes.data.map((l: any) => ({
         id: l.id, date: l.date, operatorId: l.operator_id, buyerName: l.buyer_name, styleNumber: l.style_number, orderNumber: l.order_number, color: l.color, totalQuantity: l.total_quantity, operatorCompletedQty: l.operator_completed_qty, completedQty: l.completed_qty
       })));
 
-      if (profilesData) setUsers(profilesData);
+      if (profilesRes.data) setUsers(profilesRes.data);
     } catch (err) {
-      console.error("Cloud data fetch failed. Tables may not be initialized yet.", err);
+      console.warn("Cloud data fetch failed. Tables may not be initialized yet.", err);
     } finally {
       setLoading(false);
     }
@@ -406,6 +406,24 @@ const App: React.FC = () => {
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
           {isSupabaseConfigured ? 'Securing Cloud Handshake...' : 'Booting Local Engine...'}
         </p>
+      </div>
+    );
+  }
+
+  if (initError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white p-10 text-center">
+        <div className="p-4 bg-rose-500/20 border border-rose-500/50 rounded-full mb-6 text-rose-500">
+          <AlertTriangle size={48} />
+        </div>
+        <h1 className="text-2xl font-black mb-2 uppercase tracking-tight">System Outage</h1>
+        <p className="text-slate-400 text-sm max-w-md mb-8">{initError}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-8 py-3 bg-indigo-600 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-indigo-500 transition-all"
+        >
+          Attempt Re-Terminal Access
+        </button>
       </div>
     );
   }

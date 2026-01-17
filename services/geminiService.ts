@@ -2,15 +2,18 @@
 import { GoogleGenAI } from "@google/genai";
 
 export const analyzeProductionData = async (orders: any[]) => {
-  // Check for the API key in the environment
-  if (!process.env.API_KEY || process.env.API_KEY === 'undefined') {
+  // Safe access to process.env to prevent ReferenceError in browser
+  const env = (globalThis as any).process?.env || {};
+  const apiKey = env.API_KEY;
+
+  if (!apiKey || apiKey === 'undefined') {
     console.warn("Gemini API Key is missing. Analysis skipped.");
     return null;
   }
 
   try {
     // Instantiate exactly as required by guidelines
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
 
     const prompt = `
       Analyze the following sweater manufacturing production data and provide a brief executive summary:
@@ -31,9 +34,16 @@ export const analyzeProductionData = async (orders: any[]) => {
       }
     });
 
-    // Access .text property directly as per modern GenAI SDK standards
-    const text = response.text || "{}";
-    return JSON.parse(text);
+    // Access .text property directly
+    const text = response.text;
+    if (!text) return null;
+
+    try {
+      return JSON.parse(text);
+    } catch (parseError) {
+      console.error("Failed to parse Gemini JSON response:", text);
+      return null;
+    }
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
     return null;
