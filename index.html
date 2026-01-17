@@ -14,10 +14,9 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
-    <!-- Bridge for environment variables in browser environment -->
     <script>
+      // Shim process.env for browser environments
       window.process = window.process || { env: {} };
-      // This allows the app to find the key even if the bundler hasn't injected it
       if (!window.process.env.API_KEY) {
         window.process.env.API_KEY = "Gemini_API_Sweaterflow_2026";
       }
@@ -38,7 +37,6 @@
 </head>
 <body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
-    <!-- Explicitly load the application entry point -->
     <script type="module" src="./index.tsx"></script>
 </body>
 </html>

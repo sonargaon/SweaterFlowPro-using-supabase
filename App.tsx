@@ -44,7 +44,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        if (!isSupabaseConfigured) {
+        if (!isSupabaseConfigured || !supabase) {
           console.info("Bootstrapping with Mock Data...");
           setOrders(MOCK_ORDERS);
           setPurchases(MOCK_PURCHASES);
@@ -59,12 +59,12 @@ const App: React.FC = () => {
           return;
         }
 
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) throw sessionError;
 
-        if (session?.user) {
-          await fetchUserProfile(session.user);
+        if (sessionData?.session?.user) {
+          await fetchUserProfile(sessionData.session.user);
         } else {
           setLoading(false);
         }
@@ -77,21 +77,24 @@ const App: React.FC = () => {
 
     bootstrap();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        fetchUserProfile(session.user);
-      } else if (event === 'SIGNED_OUT') {
-        setCurrentUser(null);
-        setLoading(false);
-      }
-    });
+    if (supabase) {
+      const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          fetchUserProfile(session.user);
+        } else if (event === 'SIGNED_OUT') {
+          setCurrentUser(null);
+          setLoading(false);
+        }
+      });
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
+    }
   }, []);
 
   const fetchUserProfile = async (authUser: any) => {
+    if (!supabase) return;
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -102,7 +105,6 @@ const App: React.FC = () => {
       if (data) {
         setCurrentUser(data);
       } else {
-        // Fallback for new projects/first run
         setCurrentUser({
           id: authUser.id,
           name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Cloud Admin',
@@ -111,7 +113,6 @@ const App: React.FC = () => {
           department: 'All'
         });
       }
-      // Always try to fetch business data regardless of profile success
       await fetchAllData();
     } catch (err) {
       console.warn("User profile fetch failed, proceeding with default permissions.", err);
@@ -120,7 +121,7 @@ const App: React.FC = () => {
   };
 
   const fetchAllData = async () => {
-    if (!isSupabaseConfigured) return;
+    if (!isSupabaseConfigured || !supabase) return;
     
     try {
       const fetchers = [
@@ -164,7 +165,7 @@ const App: React.FC = () => {
       })));
 
       if (inspectionsRes.data) setInspections(inspectionsRes.data.map((i: any) => ({
-        id: i.id, date: i.date, operatorId: i.operator_id, machineNo: i.machine_no, buyerName: i.buyer_name, styleNumber: i.style_number, color: i.color, totalDelivered: i.total_delivered, knittingCompletedQty: i.knitting_completed_qty, qualityPassed: i.quality_passed, rejected: i.rejected, rejectionRate: i.rejection_rate, orderNumber: i.order_number
+        id: i.id, date: i.date, operatorId: i.operator_id, machineNo: i.machine_no, buyerName: i.buyer_name, style_number: i.style_number, color: i.color, total_delivered: i.total_delivered, knitting_completed_qty: i.knitting_completed_qty, quality_passed: i.quality_passed, rejected: i.rejected, rejection_rate: i.rejection_rate, order_number: i.order_number
       })));
 
       if (linkingRes.data) setLinkingRecords(linkingRes.data.map((l: any) => ({
@@ -180,14 +181,14 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    if (isSupabaseConfigured) {
+    if (supabase) {
       await supabase.auth.signOut();
     }
     setCurrentUser(null);
   };
 
   const handleAddOrder = async (newOrder: ProductionOrder) => {
-    if (isSupabaseConfigured) {
+    if (supabase) {
       const dbOrder = {
         id: newOrder.id,
         order_number: newOrder.orderNumber,
@@ -211,7 +212,7 @@ const App: React.FC = () => {
   };
 
   const handleUpdateOrder = async (updatedOrder: ProductionOrder) => {
-    if (isSupabaseConfigured) {
+    if (supabase) {
       const dbOrder = {
         order_number: updatedOrder.orderNumber,
         customer_id: updatedOrder.customerId,
@@ -234,7 +235,7 @@ const App: React.FC = () => {
   };
 
   const handleAddPurchase = async (newPO: PurchaseOrder) => {
-    if (isSupabaseConfigured) {
+    if (supabase) {
       const dbPO = {
         id: newPO.id,
         po_number: newPO.poNumber,
@@ -261,7 +262,7 @@ const App: React.FC = () => {
   };
 
   const handleAddTransaction = async (newTx: Transaction) => {
-    if (isSupabaseConfigured) {
+    if (supabase) {
       const dbTx = {
         id: newTx.id,
         date: newTx.date,
@@ -281,7 +282,7 @@ const App: React.FC = () => {
   };
 
   const handleAddSample = async (newSample: SampleType) => {
-    if (isSupabaseConfigured) {
+    if (supabase) {
       const dbSample = {
         id: newSample.id,
         style_number: newSample.styleNumber,
@@ -311,7 +312,7 @@ const App: React.FC = () => {
   };
 
   const handleAddCustomer = async (newCustomer: Customer) => {
-    if (isSupabaseConfigured) {
+    if (supabase) {
       const { error } = await supabase.from('customers').insert([{
         id: newCustomer.id,
         name: newCustomer.name,
@@ -326,7 +327,7 @@ const App: React.FC = () => {
   };
 
   const handleAddSupplier = async (newSupplier: Supplier) => {
-    if (isSupabaseConfigured) {
+    if (supabase) {
       const { error } = await supabase.from('suppliers').insert([{
         id: newSupplier.id,
         name: newSupplier.name,
@@ -340,7 +341,7 @@ const App: React.FC = () => {
   };
 
   const handleAddInspection = async (i: InspectionRecord) => {
-    if (isSupabaseConfigured) {
+    if (supabase) {
       const dbInspection = {
         id: i.id,
         date: i.date,
@@ -364,7 +365,7 @@ const App: React.FC = () => {
   };
 
   const handleAddLinking = async (l: LinkingRecord) => {
-    if (isSupabaseConfigured) {
+    if (supabase) {
       const dbLinking = {
         id: l.id,
         date: l.date,
@@ -385,7 +386,7 @@ const App: React.FC = () => {
   };
 
   const handleAddUser = async (newUser: User) => {
-    if (isSupabaseConfigured) {
+    if (supabase) {
       const { error } = await supabase.from('profiles').insert([{
         id: newUser.id,
         name: newUser.name,
@@ -522,13 +523,13 @@ const App: React.FC = () => {
           <div className="px-6 py-4 mb-4">
             <div className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-3">
               <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-bold text-white shadow-inner">
-                {currentUser.name.charAt(0)}
+                {currentUser?.name?.charAt(0) || 'U'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold truncate leading-tight">{currentUser.name}</p>
+                <p className="text-sm font-bold truncate leading-tight">{currentUser?.name}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="px-1.5 py-0.5 bg-slate-700 text-slate-300 rounded text-[8px] font-black uppercase tracking-tighter">
-                    {currentUser.role}
+                    {currentUser?.role}
                   </span>
                   {isSupabaseConfigured && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>}
                 </div>

@@ -2,8 +2,9 @@
 import { GoogleGenAI } from "@google/genai";
 
 export const analyzeProductionData = async (orders: any[]) => {
-  // Use process.env.API_KEY as per coding standards
-  const apiKey = process.env.API_KEY;
+  // Use globalThis to safely access process shimmed in index.html
+  const env = (globalThis as any).process?.env || {};
+  const apiKey = env.API_KEY;
 
   if (!apiKey || apiKey === 'undefined' || apiKey === '') {
     console.warn("Gemini API Key is not set in environment.");

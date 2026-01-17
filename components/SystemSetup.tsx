@@ -149,23 +149,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   reference TEXT,
   style_numbers TEXT[], -- Multi-style tracking
   created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ==========================================================
--- AUTO-SYNC PROFILES ON AUTH SIGNUP (OPTIONAL)
--- ==========================================================
--- This trigger automatically creates a profile entry when a user signs up
--- CREATE OR REPLACE FUNCTION public.handle_new_user()
--- RETURNS trigger AS $$
--- BEGIN
---   INSERT INTO public.profiles (id, name, email)
---   VALUES (new.id, new.raw_user_meta_data->>'name', new.email);
---   RETURN new;
--- END;
--- $$ LANGUAGE plpgsql SECURITY DEFINER;
--- CREATE TRIGGER on_auth_user_created
---   AFTER INSERT ON auth.users
---   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();`;
+);`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(sqlSchema);
@@ -223,15 +207,15 @@ CREATE TABLE IF NOT EXISTS transactions (
               </li>
               <li className="flex gap-3">
                 <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">2</div>
-                <p className="text-xs font-bold text-amber-800 leading-relaxed">Open your Supabase Project -> **SQL Editor**.</p>
+                <p className="text-xs font-bold text-amber-800 leading-relaxed">Open your Supabase Project -> SQL Editor.</p>
               </li>
               <li className="flex gap-3">
                 <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">3</div>
-                <p className="text-xs font-bold text-amber-800 leading-relaxed">Click **"New Query"**, paste the script, and hit **"Run"**.</p>
+                <p className="text-xs font-bold text-amber-800 leading-relaxed">Click New Query, paste the script, and hit Run.</p>
               </li>
               <li className="flex gap-3">
                 <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">4</div>
-                <p className="text-xs font-bold text-amber-800 leading-relaxed">Ensure you create your users in the **Authentication** tab for cloud login.</p>
+                <p className="text-xs font-bold text-amber-800 leading-relaxed">Ensure you create your users in the Authentication tab for cloud login.</p>
               </li>
             </ul>
           </div>
@@ -241,7 +225,7 @@ CREATE TABLE IF NOT EXISTS transactions (
             <h4 className="text-sm font-black uppercase tracking-widest mb-4">Cloud Health</h4>
             <div className="flex items-center gap-4">
               <div className={`w-3 h-3 rounded-full ${isSupabaseConfigured ? 'bg-emerald-500 animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.8)]' : 'bg-slate-500'}`}></div>
-              <p className="text-xs font-bold">{isSupabaseConfigured ? 'Connected to Project ufysppbr...' : 'Disconnected'}</p>
+              <p className="text-xs font-bold">{isSupabaseConfigured ? 'Connected to Project' : 'Disconnected'}</p>
             </div>
             <p className="text-[10px] text-indigo-300 font-medium mt-4 leading-relaxed">
               Once tables are created, all manufacturing modules will sync with your live database.
