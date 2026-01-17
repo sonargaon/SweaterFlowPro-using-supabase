@@ -1,5 +1,4 @@
 
-
 export enum Department {
   YARN = 'Yarn',
   ACCESSORIES = 'Accessories',
@@ -26,8 +25,7 @@ export interface User {
   lastLogin?: string;
 }
 
-// Added 'system-setup' to BusinessModule to fix type error in App.tsx
-export type BusinessModule = 'dashboard' | Department | 'sales' | 'procurement' | 'finance' | 'entities' | 'sample-development' | 'qc-passed' | 'reports' | 'user-management' | 'system-setup';
+export type BusinessModule = 'dashboard' | Department | 'sales' | 'procurement' | 'finance' | 'entities' | 'sample-development' | 'qc-passed' | 'reports' | 'user-management' | 'system-setup' | 'design-studio';
 
 export interface Customer {
   id: string;
@@ -48,11 +46,11 @@ export interface Supplier {
 }
 
 export interface SampleDevelopment {
-  id: string; // Internal UUID
-  styleNumber: string; // Primary Business Key
+  id: string;
+  styleNumber: string;
   status: 'draft' | 'prototype' | 'approved';
-  yarnType?: string; // e.g., Cotton, Acrylic, Cashmere
-  yarnCount?: string; // e.g., 2/28, 1/12
+  yarnType?: string;
+  yarnCount?: string;
   yarnRequiredLbs: number; 
   yarnPricePerLbs: number;
   knittingTime: number; 
@@ -76,7 +74,7 @@ export interface InspectionRecord {
   machineNo: string;
   buyerName: string;
   styleNumber: string;
-  color: string; // Added to support multi-color styles
+  color: string;
   totalDelivered: number;
   knittingCompletedQty: number;
   qualityPassed: number;
@@ -93,9 +91,9 @@ export interface LinkingRecord {
   styleNumber: string;
   orderNumber?: string;
   color: string;
-  totalQuantity: number; // Order quantity from sales
-  operatorCompletedQty: number; // Quantity completed by linking operator
-  completedQty: number; // Quality Checked completed quantity in linking
+  totalQuantity: number;
+  operatorCompletedQty: number;
+  completedQty: number;
 }
 
 export interface ProductionOrder {
@@ -103,7 +101,7 @@ export interface ProductionOrder {
   orderNumber: string;
   customerId?: string;
   style: string;
-  color: string; // Promoted to top-level for better tracking
+  color: string;
   quantity: number;
   unitPrice: number;
   currentDepartment: Department;
@@ -151,25 +149,6 @@ export interface Transaction {
   amount: number;
   method: 'Bank Transfer' | 'Cash' | 'Cheque' | 'T/T' | 'LC Payment' | 'BTB LC Payment';
   reference: string;
-  styleNumber?: string; // Kept for legacy
-  styleNumbers?: string[]; // New support for multiple styles
-}
-
-export interface YarnInventory {
-  id: string;
-  type: string;
-  color: string;
-  weightLbs: number;
-  lotNumber: string;
-  dyeingFactory: string;
-  status: 'available' | 'low' | 'out';
-  wastageAllowance: number;
-}
-
-export interface AccessoriesInventory {
-  id: string;
-  item: string;
-  description: string;
-  quantity: number;
-  unit: string;
+  styleNumber?: string;
+  styleNumbers?: string[];
 }

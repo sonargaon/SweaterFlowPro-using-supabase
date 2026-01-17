@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Terminal, Copy, CheckCircle2, Database, ShieldAlert, Code2 } from 'lucide-react';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -180,7 +179,7 @@ CREATE TABLE IF NOT EXISTS transactions (
               </div>
               <button 
                 onClick={handleCopy}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                className={copied ? "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-emerald-500 text-white" : "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}
               >
                 {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
                 {copied ? 'Schema Copied' : 'Copy All SQL'}
@@ -207,7 +206,7 @@ CREATE TABLE IF NOT EXISTS transactions (
               </li>
               <li className="flex gap-3">
                 <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">2</div>
-                <p className="text-xs font-bold text-amber-800 leading-relaxed">Open your Supabase Project -> SQL Editor.</p>
+                <p className="text-xs font-bold text-amber-800 leading-relaxed">Open your Supabase Project &rarr; SQL Editor.</p>
               </li>
               <li className="flex gap-3">
                 <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">3</div>

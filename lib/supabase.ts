@@ -1,7 +1,6 @@
-
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase credentials for Project: ufysppbrgckezipndlrs
+// Supabase credentials for Project: SweaterFlow Pro (ufysppbrgckezipndlrs)
 const supabaseUrl = 'https://ufysppbrgckezipndlrs.supabase.co';
 const supabaseAnonKey = 'sb_publishable_yqWouuCIxBVpAIQuwQyobw_vor7HSfb';
 
