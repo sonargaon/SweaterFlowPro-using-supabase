@@ -56,10 +56,15 @@ const App: React.FC = () => {
     }
 
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        fetchUserProfile(session.user);
-      } else {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          fetchUserProfile(session.user);
+        } else {
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Auth session check failed", e);
         setLoading(false);
       }
     };
@@ -82,7 +87,6 @@ const App: React.FC = () => {
 
   const fetchUserProfile = async (authUser: any) => {
     try {
-      // Try to get profile
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -93,22 +97,18 @@ const App: React.FC = () => {
         setCurrentUser(data);
         fetchAllData();
       } else {
-        // ERROR FIX: If profile is not found (likely DB not setup), 
-        // create a temporary session user so they can access 'System Setup'
-        console.warn("Profile not found in database. Using temporary session user.");
+        // Resilient fallback for first-time cloud setup
         setCurrentUser({
           id: authUser.id,
-          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Cloud User',
+          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Cloud Operator',
           email: authUser.email || '',
           role: authUser.email === 'super@sweaterflow.com' ? UserRole.SUPER_ADMIN : UserRole.USER,
           department: 'All'
         });
-        // Try to fetch data anyway (might fail if tables don't exist)
         fetchAllData();
       }
     } catch (err) {
-      console.error('Error in fetchUserProfile:', err);
-    } finally {
+      console.error('Resilient User Profile Catch:', err);
       setLoading(false);
     }
   };
@@ -173,7 +173,7 @@ const App: React.FC = () => {
 
       if (profilesData) setUsers(profilesData);
     } catch (err) {
-      console.error("Data fetch error - tables might not exist yet:", err);
+      console.error("Cloud data fetch failed. Tables may not be initialized yet.", err);
     } finally {
       setLoading(false);
     }
