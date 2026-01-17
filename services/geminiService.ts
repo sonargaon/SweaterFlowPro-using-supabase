@@ -2,17 +2,15 @@
 import { GoogleGenAI } from "@google/genai";
 
 export const analyzeProductionData = async (orders: any[]) => {
-  // Safe access to process.env to prevent ReferenceError in browser
-  const env = (globalThis as any).process?.env || {};
-  const apiKey = env.API_KEY;
+  // Use process.env.API_KEY as per coding standards
+  const apiKey = process.env.API_KEY;
 
-  if (!apiKey || apiKey === 'undefined') {
-    console.warn("Gemini API Key is missing. Analysis skipped.");
+  if (!apiKey || apiKey === 'undefined' || apiKey === '') {
+    console.warn("Gemini API Key is not set in environment.");
     return null;
   }
 
   try {
-    // Instantiate exactly as required by guidelines
     const ai = new GoogleGenAI({ apiKey });
 
     const prompt = `
@@ -34,14 +32,13 @@ export const analyzeProductionData = async (orders: any[]) => {
       }
     });
 
-    // Access .text property directly
     const text = response.text;
     if (!text) return null;
 
     try {
       return JSON.parse(text);
     } catch (parseError) {
-      console.error("Failed to parse Gemini JSON response:", text);
+      console.error("Gemini JSON Parse Error:", text);
       return null;
     }
   } catch (error) {
