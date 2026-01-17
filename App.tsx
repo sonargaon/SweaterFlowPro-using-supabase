@@ -30,18 +30,27 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   
   // Business Data State
-  const [orders, setOrders] = useState<ProductionOrder[]>(MOCK_ORDERS);
-  const [purchases, setPurchases] = useState<PurchaseOrder[]>(MOCK_PURCHASES);
-  const [customers, setCustomers] = useState<Customer[]>(MOCK_CUSTOMERS);
-  const [suppliers, setSuppliers] = useState<Supplier[]>(MOCK_SUPPLIERS);
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
-  const [samples, setSamples] = useState<SampleType[]>(MOCK_SAMPLES);
-  const [inspections, setInspections] = useState<InspectionRecord[]>(MOCK_INSPECTIONS);
-  const [linkingRecords, setLinkingRecords] = useState<LinkingRecord[]>(MOCK_LINKING);
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
+  const [orders, setOrders] = useState<ProductionOrder[]>([]);
+  const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [samples, setSamples] = useState<SampleType[]>([]);
+  const [inspections, setInspections] = useState<InspectionRecord[]>([]);
+  const [linkingRecords, setLinkingRecords] = useState<LinkingRecord[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
+      setOrders(MOCK_ORDERS);
+      setPurchases(MOCK_PURCHASES);
+      setCustomers(MOCK_CUSTOMERS);
+      setSuppliers(MOCK_SUPPLIERS);
+      setTransactions(MOCK_TRANSACTIONS);
+      setSamples(MOCK_SAMPLES);
+      setInspections(MOCK_INSPECTIONS);
+      setLinkingRecords(MOCK_LINKING);
+      setUsers(MOCK_USERS);
       setLoading(false);
       return;
     }
@@ -107,23 +116,133 @@ const App: React.FC = () => {
     ] = await Promise.all([
       supabase.from('orders').select('*').order('created_at', { ascending: false }),
       supabase.from('purchases').select('*').order('date', { ascending: false }),
-      supabase.from('customers').select('*'),
-      supabase.from('suppliers').select('*'),
+      supabase.from('customers').select('*').order('name', { ascending: true }),
+      supabase.from('suppliers').select('*').order('name', { ascending: true }),
       supabase.from('transactions').select('*').order('date', { ascending: false }),
-      supabase.from('samples').select('*'),
+      supabase.from('samples').select('*').order('style_number', { ascending: true }),
       supabase.from('inspections').select('*').order('date', { ascending: false }),
       supabase.from('linking').select('*').order('date', { ascending: false }),
-      supabase.from('profiles').select('*')
+      supabase.from('profiles').select('*').order('name', { ascending: true })
     ]);
 
-    if (ordersData) setOrders(ordersData);
-    if (purchasesData) setPurchases(purchasesData);
+    // Map snake_case database fields back to camelCase types
+    if (ordersData) {
+      setOrders(ordersData.map((o: any) => ({
+        id: o.id,
+        orderNumber: o.order_number,
+        customerId: o.customer_id,
+        style: o.style,
+        color: o.color,
+        quantity: o.quantity,
+        unitPrice: o.unit_price,
+        currentDepartment: o.current_department as Department,
+        status: o.status,
+        startDate: o.start_date,
+        dueDate: o.due_date,
+        progress: o.progress,
+        yarnDetails: o.yarn_details
+      })));
+    }
+    
+    if (purchasesData) {
+      // Fix: Mapped properties in fetchAllData for purchasesData to use camelCase keys matching PurchaseOrder interface
+      setPurchases(purchasesData.map((p: any) => ({
+        id: p.id,
+        poNumber: p.po_number,
+        supplierId: p.supplier_id,
+        itemType: p.item_type,
+        description: p.description,
+        quantity: p.quantity,
+        unit: p.unit,
+        totalAmount: p.total_amount,
+        status: p.status,
+        date: p.date,
+        styleNumber: p.style_number,
+        color: p.color,
+        lotNumber: p.lot_number,
+        ratePerUnit: p.rate_per_unit,
+        paymentDate: p.payment_date,
+        paymentRef: p.payment_ref
+      })));
+    }
+
     if (customersData) setCustomers(customersData);
     if (suppliersData) setSuppliers(suppliersData);
-    if (transactionsData) setTransactions(transactionsData);
-    if (samplesData) setSamples(samplesData);
-    if (inspectionsData) setInspections(inspectionsData);
-    if (linkingData) setLinkingRecords(linkingData);
+    
+    if (transactionsData) {
+      // Fix: Mapped style_numbers to styleNumbers for Transaction interface
+      setTransactions(transactionsData.map((t: any) => ({
+        id: t.id,
+        date: t.date,
+        type: t.type,
+        entityId: t.entity_id,
+        entityName: t.entity_name,
+        amount: t.amount,
+        method: t.method,
+        reference: t.reference,
+        styleNumbers: t.style_numbers
+      })));
+    }
+
+    if (samplesData) {
+      setSamples(samplesData.map((s: any) => ({
+        id: s.id,
+        styleNumber: s.style_number,
+        status: s.status,
+        yarnType: s.yarn_type,
+        yarnCount: s.yarn_count,
+        yarnRequiredLbs: s.yarn_required_lbs,
+        yarnPricePerLbs: s.yarn_price_per_lbs,
+        knittingTime: s.knitting_time,
+        knittingCost: s.knitting_cost,
+        linkingCost: s.linking_cost,
+        trimmingMendingCost: s.trimming_mending_cost,
+        sewingCosting: s.sewing_costing,
+        washingCost: s.washing_cost,
+        pqcCosting: s.pqc_costing,
+        ironCosting: s.iron_costing,
+        getupCosting: s.getup_costing,
+        packingCosting: s.packing_costing,
+        boilerGas: s.boiler_gas,
+        overheadCost: s.overhead_cost
+      })));
+    }
+
+    if (inspectionsData) {
+      // Fix: Mapped rejection_rate to rejectionRate for InspectionRecord interface
+      setInspections(inspectionsData.map((i: any) => ({
+        id: i.id,
+        date: i.date,
+        operatorId: i.operator_id,
+        machineNo: i.machine_no,
+        buyerName: i.buyer_name,
+        styleNumber: i.style_number,
+        color: i.color,
+        totalDelivered: i.total_delivered,
+        knittingCompletedQty: i.knitting_completed_qty,
+        qualityPassed: i.quality_passed,
+        rejected: i.rejected,
+        rejectionRate: i.rejection_rate,
+        orderNumber: i.order_number
+      })));
+    }
+
+    if (linkingData) {
+      // Fix: Mapped completed_qty to completedQty for LinkingRecord interface
+      setLinkingRecords(linkingData.map((l: any) => ({
+        id: l.id,
+        date: l.date,
+        operatorId: l.operator_id,
+        buyerName: l.buyer_name,
+        styleNumber: l.style_number,
+        orderNumber: l.order_number,
+        color: l.color,
+        totalQuantity: l.total_quantity,
+        operatorCompletedQty: l.operator_completed_qty,
+        completedQty: l.completed_qty
+      })));
+    }
+
     if (profilesData) setUsers(profilesData);
     
     setLoading(false);
@@ -136,11 +255,26 @@ const App: React.FC = () => {
     setCurrentUser(null);
   };
 
-  // Mutation logic with fallback
   const handleAddOrder = async (newOrder: ProductionOrder) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('orders').insert([newOrder]);
-      if (!error) fetchAllData();
+      const dbOrder = {
+        id: newOrder.id,
+        order_number: newOrder.orderNumber,
+        customer_id: newOrder.customerId,
+        style: newOrder.style,
+        color: newOrder.color,
+        quantity: newOrder.quantity,
+        unit_price: newOrder.unitPrice,
+        current_department: newOrder.currentDepartment,
+        status: newOrder.status,
+        start_date: newOrder.startDate,
+        due_date: newOrder.dueDate,
+        progress: newOrder.progress,
+        yarn_details: newOrder.yarnDetails
+      };
+      const { error } = await supabase.from('orders').insert([dbOrder]);
+      if (error) console.error('Supabase error:', error);
+      else fetchAllData();
     } else {
       setOrders(prev => [newOrder, ...prev]);
     }
@@ -148,25 +282,68 @@ const App: React.FC = () => {
 
   const handleUpdateOrder = async (updatedOrder: ProductionOrder) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('orders').update(updatedOrder).eq('id', updatedOrder.id);
+      const dbOrder = {
+        order_number: updatedOrder.orderNumber,
+        customer_id: updatedOrder.customerId,
+        style: updatedOrder.style,
+        color: updatedOrder.color,
+        quantity: updatedOrder.quantity,
+        unit_price: updatedOrder.unitPrice,
+        current_department: updatedOrder.currentDepartment,
+        status: updatedOrder.status,
+        start_date: updatedOrder.startDate,
+        due_date: updatedOrder.dueDate,
+        progress: updatedOrder.progress,
+        yarn_details: updatedOrder.yarnDetails
+      };
+      const { error } = await supabase.from('orders').update(dbOrder).eq('id', updatedOrder.id);
       if (!error) fetchAllData();
     } else {
       setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
     }
   };
 
-  const handleAddPurchase = async (newPurchase: PurchaseOrder) => {
+  const handleAddPurchase = async (newPO: PurchaseOrder) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('purchases').insert([newPurchase]);
+      const dbPO = {
+        id: newPO.id,
+        po_number: newPO.poNumber,
+        supplier_id: newPO.supplierId,
+        item_type: newPO.itemType,
+        description: newPO.description,
+        quantity: newPO.quantity,
+        unit: newPO.unit,
+        total_amount: newPO.totalAmount,
+        status: newPO.status,
+        date: newPO.date,
+        style_number: newPO.styleNumber,
+        color: newPO.color,
+        lot_number: newPO.lotNumber,
+        rate_per_unit: newPO.ratePerUnit,
+        payment_date: newPO.paymentDate,
+        payment_ref: newPO.paymentRef
+      };
+      const { error } = await supabase.from('purchases').insert([dbPO]);
       if (!error) fetchAllData();
     } else {
-      setPurchases(prev => [newPurchase, ...prev]);
+      setPurchases(prev => [newPO, ...prev]);
     }
   };
 
   const handleAddTransaction = async (newTx: Transaction) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('transactions').insert([newTx]);
+      const dbTx = {
+        id: newTx.id,
+        date: newTx.date,
+        type: newTx.type,
+        entity_id: newTx.entityId,
+        entity_name: newTx.entityName,
+        amount: newTx.amount,
+        method: newTx.method,
+        reference: newTx.reference,
+        style_numbers: newTx.styleNumbers
+      };
+      const { error } = await supabase.from('transactions').insert([dbTx]);
       if (!error) fetchAllData();
     } else {
       setTransactions(prev => [...prev, newTx]);
@@ -175,7 +352,29 @@ const App: React.FC = () => {
 
   const handleAddSample = async (newSample: SampleType) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('samples').insert([newSample]);
+      // Corrected property access to use camelCase from the SampleType interface
+      const dbSample = {
+        id: newSample.id,
+        style_number: newSample.styleNumber,
+        status: newSample.status,
+        yarn_type: newSample.yarnType,
+        yarn_count: newSample.yarnCount,
+        yarn_required_lbs: newSample.yarnRequiredLbs,
+        yarn_price_per_lbs: newSample.yarnPricePerLbs,
+        knitting_time: newSample.knittingTime,
+        knitting_cost: newSample.knittingCost,
+        linking_cost: newSample.linkingCost,
+        trimming_mending_cost: newSample.trimmingMendingCost,
+        sewing_costing: newSample.sewingCosting,
+        washing_cost: newSample.washingCost,
+        pqc_costing: newSample.pqcCosting,
+        iron_costing: newSample.ironCosting,
+        getup_costing: newSample.getupCosting,
+        packing_costing: newSample.packingCosting,
+        boiler_gas: newSample.boilerGas,
+        overhead_cost: newSample.overheadCost
+      };
+      const { error } = await supabase.from('samples').insert([dbSample]);
       if (!error) fetchAllData();
     } else {
       setSamples(prev => [newSample, ...prev]);
@@ -200,21 +399,65 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAddInspection = async (newRecord: InspectionRecord) => {
+  const handleAddInspection = async (i: InspectionRecord) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('inspections').insert([newRecord]);
+      const dbInspection = {
+        id: i.id,
+        date: i.date,
+        operator_id: i.operatorId,
+        machine_no: i.machineNo,
+        buyer_name: i.buyerName,
+        style_number: i.styleNumber,
+        color: i.color,
+        total_delivered: i.totalDelivered,
+        knitting_completed_qty: i.knittingCompletedQty,
+        quality_passed: i.qualityPassed,
+        rejected: i.rejected,
+        rejection_rate: i.rejectionRate,
+        order_number: i.orderNumber
+      };
+      const { error } = await supabase.from('inspections').insert([dbInspection]);
       if (!error) fetchAllData();
     } else {
-      setInspections(prev => [newRecord, ...prev]);
+      setInspections(prev => [i, ...prev]);
     }
   };
 
-  const handleAddLinking = async (newRecord: LinkingRecord) => {
+  const handleAddLinking = async (l: LinkingRecord) => {
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('linking').insert([newRecord]);
+      // Fix: Mapped property values to camelCase counterparts (l.orderNumber, l.completedQty) to fix LinkingRecord type error
+      const dbLinking = {
+        id: l.id,
+        date: l.date,
+        operator_id: l.operatorId,
+        buyer_name: l.buyerName,
+        style_number: l.styleNumber,
+        order_number: l.orderNumber,
+        color: l.color,
+        total_quantity: l.totalQuantity,
+        operator_completed_qty: l.operatorCompletedQty,
+        completed_qty: l.completedQty
+      };
+      const { error } = await supabase.from('linking').insert([dbLinking]);
       if (!error) fetchAllData();
     } else {
-      setLinkingRecords(prev => [newRecord, ...prev]);
+      setLinkingRecords(prev => [l, ...prev]);
+    }
+  };
+
+  const handleAddUser = async (newUser: User) => {
+    if (isSupabaseConfigured) {
+      // Create profile in DB
+      const { error } = await supabase.from('profiles').insert([{
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        department: newUser.department
+      }]);
+      if (!error) fetchAllData();
+    } else {
+      setUsers(prev => [newUser, ...prev]);
     }
   };
 
@@ -230,7 +473,7 @@ const App: React.FC = () => {
   }
 
   if (!currentUser) {
-    return <Login onLogin={(user) => user && setCurrentUser(user)} />;
+    return <Login onLogin={(user) => setCurrentUser(user)} />;
   }
 
   const getNavGroups = () => {
@@ -287,7 +530,7 @@ const App: React.FC = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard orders={orders} />;
       case 'reports': return <ReportManager orders={orders} transactions={transactions} purchases={purchases} inspections={inspections} customers={customers} suppliers={suppliers} samples={samples} linkingRecords={linkingRecords} />;
-      case 'user-management': return <UserManagement users={users} onAddUser={() => {}} />;
+      case 'user-management': return <UserManagement users={users} onAddUser={handleAddUser} />;
       case 'system-setup': return <SystemSetup />;
       case 'sample-development': return <SampleDevelopment samples={samples} onAddSample={handleAddSample} />;
       case 'qc-passed': return <QCPassedSummary orders={orders} inspections={inspections} customers={customers} onAddInspection={handleAddInspection} />;

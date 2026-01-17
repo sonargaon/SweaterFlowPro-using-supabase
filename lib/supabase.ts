@@ -1,12 +1,11 @@
-
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+// Confirmed Supabase credentials for Project: SweaterFlow Pro (ufysppbrgckezipndlrs)
+const supabaseUrl = 'https://ufysppbrgckezipndlrs.supabase.co';
+const supabaseAnonKey = 'sb_publishable_yqWouuCIxBVpAIQuwQyobw_vor7HSfb';
 
-// Export a flag to check if we can actually use the cloud database
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'undefined');
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl!, supabaseAnonKey!)
+  ? createClient(supabaseUrl, supabaseAnonKey)
   : (null as any);

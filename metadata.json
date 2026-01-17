@@ -1,5 +1,5 @@
 {
-  "name": "SweaterFlow Pro - Manufacturing ERP use Superbase",
-  "description": "A comprehensive production management system for sweater manufacturing featuring modules for Yarn, Accessories, Knitting, Inspection, Linking, and Finishing, with AI-powered production analysis.",
+  "name": "SweaterFlow Pro - Manufacturing ERP for Supabase",
+  "description": "A comprehensive production management system for sweater manufacturing featuring modules for Yarn, Accessories, Knitting, Inspection, Linking, and Finishing, fully synchronized with Supabase Cloud Database.",
   "requestFramePermissions": []
 }
