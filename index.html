@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,12 +16,13 @@
     </style>
     <script>
       // Global shim for process.env to support libraries expecting Node-like environment
-      // This must run before any modules are loaded
-      window.process = window.process || {};
-      window.process.env = window.process.env || {};
-      if (!window.process.env.API_KEY) {
-        window.process.env.API_KEY = "Gemini_API_Sweaterflow_2026";
-      }
+      window.process = {
+        env: {
+          API_KEY: "Gemini_API_Sweaterflow_2026"
+        }
+      };
+      // Make process truly global
+      window.global = window;
     </script>
 <script type="importmap">
 {

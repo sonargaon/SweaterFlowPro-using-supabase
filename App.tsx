@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, CloudSync, Menu, ShoppingCart, Truck, Wallet, 
   FlaskConical, ClipboardCheck, BarChart3, LogOut, ShieldCheck, Loader2, 
-  Terminal, Building2, UserCircle
+  Terminal, UserCircle
 } from 'lucide-react';
 import { Department, ProductionOrder, BusinessModule, PurchaseOrder, Transaction, Customer, Supplier, SampleDevelopment as SampleType, InspectionRecord, LinkingRecord, User, UserRole } from './types';
 import { DEPARTMENTS_CONFIG, MOCK_ORDERS, MOCK_CUSTOMERS, MOCK_SUPPLIERS, MOCK_PURCHASES, MOCK_TRANSACTIONS, MOCK_SAMPLES, MOCK_INSPECTIONS, MOCK_LINKING, MOCK_USERS } from './constants';
@@ -20,6 +20,8 @@ import { ReportManager } from './components/ReportManager';
 import { Login } from './components/Login';
 import { UserManagement } from './components/UserManagement';
 import { SystemSetup } from './components/SystemSetup';
+import { InspectionManager } from './components/InspectionManager';
+import { LinkingManager } from './components/LinkingManager';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -46,7 +48,7 @@ const App: React.FC = () => {
           setCustomers(MOCK_CUSTOMERS);
           setSuppliers(MOCK_SUPPLIERS);
           setTransactions(MOCK_TRANSACTIONS);
-          setSamples(MOCK_SAMPLES.map(s => ({...s, windingCost: 0, trimmingCost: 0, mendingCost: 0, others1: 0, others2: 0, others3: 0, others4: 0})));
+          setSamples(MOCK_SAMPLES);
           setInspections(MOCK_INSPECTIONS);
           setLinkingRecords(MOCK_LINKING);
           setUsers(MOCK_USERS);
@@ -61,6 +63,7 @@ const App: React.FC = () => {
           setLoading(false);
         }
       } catch (err) {
+        console.error("Bootstrap error:", err);
         setLoading(false);
       }
     };
@@ -81,6 +84,7 @@ const App: React.FC = () => {
       });
       await fetchAllData();
     } catch (err) {
+      console.error("Profile fetch error:", err);
       setLoading(false);
     }
   };
@@ -134,7 +138,9 @@ const App: React.FC = () => {
       if (i.data) setInspections(i.data.map((x: any) => ({ ...x, operatorId: x.operator_id, machineNo: x.machine_no, buyerName: x.buyer_name, styleNumber: x.style_number, totalDelivered: x.total_delivered, knittingCompletedQty: x.knitting_completed_qty, qualityPassed: x.quality_passed, rejectionRate: x.rejection_rate, orderNumber: x.order_number })));
       if (l.data) setLinkingRecords(l.data.map((x: any) => ({ ...x, operatorId: x.operator_id, buyerName: x.buyer_name, styleNumber: x.style_number, orderNumber: x.order_number, totalQuantity: x.total_quantity, operatorCompletedQty: x.operator_completed_qty, completedQty: x.completed_qty })));
       if (pr.data) setUsers(pr.data);
-    } catch (err) {} finally {
+    } catch (err) {
+      console.error("Data fetch error:", err);
+    } finally {
       setLoading(false);
     }
   };
@@ -155,6 +161,7 @@ const App: React.FC = () => {
     }
   };
   const addInspection = (i: InspectionRecord) => setInspections([...inspections, i]);
+  const addLinking = (r: LinkingRecord) => setLinkingRecords([...linkingRecords, r]);
   const addPurchase = (p: PurchaseOrder) => setPurchases([...purchases, p]);
   const addTransaction = (t: Transaction) => setTransactions([...transactions, t]);
   const addUser = (u: User) => setUsers([...users, u]);
@@ -172,6 +179,13 @@ const App: React.FC = () => {
       case 'procurement': return <ProcurementManager purchases={purchases} suppliers={suppliers} orders={orders} onAddPurchase={addPurchase} />;
       case 'partners': return <EntityManager initialView="customers" customers={customers} suppliers={suppliers} onAddCustomer={addCustomer} onAddSupplier={addSupplier} />;
       case 'sales': return <SalesManager orders={orders} customers={customers} samples={samples} inspections={inspections} onAddOrder={addOrder} onAddInspection={addInspection} />;
+      
+      // Explicit Department Routing
+      case Department.INSPECTION:
+        return <InspectionManager records={inspections} customers={customers} samples={samples} orders={orders} onAddRecord={addInspection} />;
+      case Department.LINKING:
+        return <LinkingManager records={linkingRecords} customers={customers} samples={samples} orders={orders} inspections={inspections} onAddRecord={addLinking} />;
+      
       default: 
         if (Object.values(Department).includes(activeTab as any)) {
           return <DepartmentManager deptId={activeTab as Department} orders={orders} customers={customers} samples={samples} purchases={purchases} onUpdateOrder={() => {}} onAddOrder={addOrder} />;
@@ -183,7 +197,7 @@ const App: React.FC = () => {
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white gap-4">
       <Loader2 size={48} className="text-indigo-500 animate-spin" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Initializing Database...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Initializing Core Engine...</p>
     </div>
   );
 

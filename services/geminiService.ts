@@ -1,8 +1,8 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Fix: Directly initialized GoogleGenAI with process.env.API_KEY as per coding guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Use window.process shim for reliable access across all modules
+const ai = new GoogleGenAI({ apiKey: (window as any).process.env.API_KEY });
 
 export const analyzeProductionData = async (orders: any[]) => {
   try {
@@ -17,14 +17,12 @@ export const analyzeProductionData = async (orders: any[]) => {
       - summary: string (Overall state of the factory)
     `;
 
-    // Fix: Using ai.models.generateContent directly with model and prompt string
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: { responseMimeType: "application/json" }
     });
 
-    // Fix: Accessing .text as a property (not a method) as per SDK specifications
     return response.text ? JSON.parse(response.text) : null;
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
@@ -53,14 +51,12 @@ export const analyzeStyleRisk = async (techPack: any) => {
       - mitigationSteps: string[]
     `;
 
-    // Fix: Using ai.models.generateContent directly with model and contents
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: { responseMimeType: "application/json" }
     });
 
-    // Fix: Accessing .text property directly
     return response.text ? JSON.parse(response.text) : null;
   } catch (error) {
     console.error("Risk Analysis Error:", error);
