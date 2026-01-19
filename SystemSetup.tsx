@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS samples (
   yarn_count TEXT,
   yarn_required_lbs NUMERIC DEFAULT 0,
   yarn_price_per_lbs NUMERIC DEFAULT 0,
+  winding_cost NUMERIC DEFAULT 0,
   knitting_time INTEGER DEFAULT 0,
   knitting_cost NUMERIC DEFAULT 0,
   linking_cost NUMERIC DEFAULT 0,
@@ -86,6 +87,8 @@ CREATE TABLE IF NOT EXISTS samples (
   others2 NUMERIC DEFAULT 0,
   others3 NUMERIC DEFAULT 0,
   others4 NUMERIC DEFAULT 0,
+  construction_notes TEXT,
+  packaging_notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -218,23 +221,7 @@ CREATE TABLE IF NOT EXISTS transactions (
                 <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">3</div>
                 <p className="text-xs font-bold text-amber-800 leading-relaxed">Click New Query, paste the script, and hit Run.</p>
               </li>
-              <li className="flex gap-3">
-                <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-700 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">4</div>
-                <p className="text-xs font-bold text-amber-800 leading-relaxed">Ensure you create your users in the Authentication tab for cloud login.</p>
-              </li>
             </ul>
-          </div>
-          
-          <div className="bg-indigo-900 p-8 rounded-3xl text-white relative overflow-hidden group">
-            <div className="absolute right-0 top-0 p-4 opacity-10"><Database size={80} /></div>
-            <h4 className="text-sm font-black uppercase tracking-widest mb-4">Cloud Health</h4>
-            <div className="flex items-center gap-4">
-              <div className={`w-3 h-3 rounded-full ${isSupabaseConfigured ? 'bg-emerald-500 animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.8)]' : 'bg-slate-500'}`}></div>
-              <p className="text-xs font-bold">{isSupabaseConfigured ? 'Connected to Project' : 'Disconnected'}</p>
-            </div>
-            <p className="text-[10px] text-indigo-300 font-medium mt-4 leading-relaxed">
-              Once tables are created, all manufacturing modules will sync with your live database.
-            </p>
           </div>
         </div>
       </div>

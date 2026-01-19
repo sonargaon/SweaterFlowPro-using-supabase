@@ -1,18 +1,11 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const getApiKey = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === 'undefined' || apiKey === '') return null;
-  return apiKey;
-};
+// Fix: Directly initialized GoogleGenAI with process.env.API_KEY as per coding guidelines
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const analyzeProductionData = async (orders: any[]) => {
-  const apiKey = getApiKey();
-  if (!apiKey) return null;
-
   try {
-    const ai = new GoogleGenAI({ apiKey });
     const prompt = `
       Analyze the following sweater manufacturing production data and provide a brief executive summary:
       ${JSON.stringify(orders)}
@@ -24,12 +17,14 @@ export const analyzeProductionData = async (orders: any[]) => {
       - summary: string (Overall state of the factory)
     `;
 
+    // Fix: Using ai.models.generateContent directly with model and prompt string
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: { responseMimeType: "application/json" }
     });
 
+    // Fix: Accessing .text as a property (not a method) as per SDK specifications
     return response.text ? JSON.parse(response.text) : null;
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
@@ -38,11 +33,7 @@ export const analyzeProductionData = async (orders: any[]) => {
 };
 
 export const analyzeStyleRisk = async (techPack: any) => {
-  const apiKey = getApiKey();
-  if (!apiKey) return null;
-
   try {
-    const ai = new GoogleGenAI({ apiKey });
     const prompt = `
       As a Senior Manufacturing Engineer, audit this sweater Tech-Pack for production risks:
       Style: ${techPack.styleNumber}
@@ -62,12 +53,14 @@ export const analyzeStyleRisk = async (techPack: any) => {
       - mitigationSteps: string[]
     `;
 
+    // Fix: Using ai.models.generateContent directly with model and contents
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: { responseMimeType: "application/json" }
     });
 
+    // Fix: Accessing .text property directly
     return response.text ? JSON.parse(response.text) : null;
   } catch (error) {
     console.error("Risk Analysis Error:", error);

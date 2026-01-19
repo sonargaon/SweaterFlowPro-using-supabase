@@ -119,6 +119,8 @@ export const MOCK_SAMPLES: SampleDevelopment[] = [
     yarnCount: '2/28',
     yarnRequiredLbs: 0.85,
     yarnPricePerLbs: 18.50,
+    // Fix: Added missing required windingCost property to match interface
+    windingCost: 0.20,
     knittingTime: 45,
     knittingCost: 4.50,
     linkingCost: 3.20,

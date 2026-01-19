@@ -48,11 +48,12 @@ export interface Supplier {
 export interface SampleDevelopment {
   id: string;
   styleNumber: string;
-  status: 'draft' | 'prototype' | 'approved';
+  status: 'draft' | 'prototype' | 'approved' | 'rejected';
   yarnType?: string;
   yarnCount?: string;
   yarnRequiredLbs: number; 
   yarnPricePerLbs: number;
+  windingCost: number;
   knittingTime: number; 
   knittingCost: number;
   linkingCost: number;

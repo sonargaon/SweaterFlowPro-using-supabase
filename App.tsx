@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Database, CloudSync, Menu, ShoppingCart, Users, Truck, Wallet, 
-  FlaskConical, ClipboardCheck, BarChart3, LogOut, ShieldCheck, Loader2, AlertTriangle, 
-  Settings, Terminal, Wand2, Building2, UserCircle
+  LayoutDashboard, CloudSync, Menu, ShoppingCart, Truck, Wallet, 
+  FlaskConical, ClipboardCheck, BarChart3, LogOut, ShieldCheck, Loader2, 
+  Terminal, Building2, UserCircle
 } from 'lucide-react';
 import { Department, ProductionOrder, BusinessModule, PurchaseOrder, Transaction, Customer, Supplier, SampleDevelopment as SampleType, InspectionRecord, LinkingRecord, User, UserRole } from './types';
 import { DEPARTMENTS_CONFIG, MOCK_ORDERS, MOCK_CUSTOMERS, MOCK_SUPPLIERS, MOCK_PURCHASES, MOCK_TRANSACTIONS, MOCK_SAMPLES, MOCK_INSPECTIONS, MOCK_LINKING, MOCK_USERS } from './constants';
@@ -15,8 +15,6 @@ import { ProcurementManager } from './components/ProcurementManager';
 import { EntityManager } from './components/EntityManager';
 import { SampleDevelopment } from './components/SampleDevelopment';
 import { SalesManager } from './components/SalesManager';
-import { InspectionManager } from './components/InspectionManager';
-import { LinkingManager } from './components/LinkingManager';
 import { QCPassedSummary } from './components/QCPassedSummary';
 import { ReportManager } from './components/ReportManager';
 import { Login } from './components/Login';
@@ -28,7 +26,6 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<BusinessModule>('dashboard');
   const [loading, setLoading] = useState(true);
-  const [initError, setInitError] = useState<string | null>(null);
   
   const [orders, setOrders] = useState<ProductionOrder[]>([]);
   const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
@@ -49,7 +46,7 @@ const App: React.FC = () => {
           setCustomers(MOCK_CUSTOMERS);
           setSuppliers(MOCK_SUPPLIERS);
           setTransactions(MOCK_TRANSACTIONS);
-          setSamples(MOCK_SAMPLES.map(s => ({...s, trimmingCost: 0, mendingCost: 0, others1: 0, others2: 0, others3: 0, others4: 0})));
+          setSamples(MOCK_SAMPLES.map(s => ({...s, windingCost: 0, trimmingCost: 0, mendingCost: 0, others1: 0, others2: 0, others3: 0, others4: 0})));
           setInspections(MOCK_INSPECTIONS);
           setLinkingRecords(MOCK_LINKING);
           setUsers(MOCK_USERS);
@@ -57,15 +54,13 @@ const App: React.FC = () => {
           return;
         }
 
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
+        const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData?.session?.user) {
           await fetchUserProfile(sessionData.session.user);
         } else {
           setLoading(false);
         }
-      } catch (err: any) {
-        setInitError(err.message || "Failed to connect to authentication server.");
+      } catch (err) {
         setLoading(false);
       }
     };
@@ -117,6 +112,7 @@ const App: React.FC = () => {
         yarnCount: x.yarn_count, 
         yarnRequiredLbs: x.yarn_required_lbs, 
         yarnPricePerLbs: x.yarn_price_per_lbs, 
+        windingCost: x.winding_cost,
         knittingTime: x.knitting_time, 
         knittingCost: x.knitting_cost, 
         linkingCost: x.linking_cost, 
@@ -152,6 +148,12 @@ const App: React.FC = () => {
   const addSupplier = (s: Supplier) => setSuppliers([...suppliers, s]);
   const addOrder = (o: ProductionOrder) => setOrders([...orders, o]);
   const addSample = (s: SampleType) => setSamples([...samples, s]);
+  const deleteSample = (id: string) => {
+    setSamples(samples.filter(s => s.id !== id));
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('samples').delete().eq('id', id).then();
+    }
+  };
   const addInspection = (i: InspectionRecord) => setInspections([...inspections, i]);
   const addPurchase = (p: PurchaseOrder) => setPurchases([...purchases, p]);
   const addTransaction = (t: Transaction) => setTransactions([...transactions, t]);
@@ -164,7 +166,7 @@ const App: React.FC = () => {
       case 'reports': return <ReportManager orders={orders} transactions={transactions} purchases={purchases} inspections={inspections} customers={customers} suppliers={suppliers} samples={samples} linkingRecords={linkingRecords} />;
       case 'user-management': return <UserManagement users={users} onAddUser={addUser} onUpdateUser={updateUser} />;
       case 'system-setup': return <SystemSetup />;
-      case 'sample-development': return <SampleDevelopment samples={samples} onAddSample={addSample} />;
+      case 'sample-development': return <SampleDevelopment samples={samples} onAddSample={addSample} onDeleteSample={deleteSample} />;
       case 'qc-passed': return <QCPassedSummary orders={orders} inspections={inspections} customers={customers} onAddInspection={addInspection} />;
       case 'finance': return <FinanceManager transactions={transactions} customers={customers} suppliers={suppliers} orders={orders} purchases={purchases} inspections={inspections} onAddTransaction={addTransaction} />;
       case 'procurement': return <ProcurementManager purchases={purchases} suppliers={suppliers} orders={orders} onAddPurchase={addPurchase} />;
