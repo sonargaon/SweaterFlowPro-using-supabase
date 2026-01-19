@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { CloudSync, Lock, Mail, ArrowRight, AlertCircle, Loader2, AlertTriangle, KeyRound, ArrowLeft, CheckCircle2, FlaskConical } from 'lucide-react';
+import { CloudSync, Lock, Mail, ArrowRight, AlertCircle, Loader2, AlertTriangle, KeyRound, ArrowLeft, CheckCircle2, UserCog } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { MOCK_USERS } from '../constants';
 import { User, UserRole } from '../types';
@@ -28,7 +28,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Step 1: Mock Credentials check (prioritize for easy development/testing)
+    // Step 1: Mock Credentials check
     const mockUser = MOCK_USERS.find(u => u.email === email && u.password === password);
     if (mockUser) {
       onLogin(mockUser);
@@ -45,10 +45,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         });
 
         if (authError) {
-          setError(authError.message === 'Invalid login credentials' ? 'Invalid credentials. If this is your first time, check your Supabase Auth dashboard.' : authError.message);
+          setError(authError.message === 'Invalid login credentials' ? 'Invalid credentials. Please verify your email and secret key.' : authError.message);
         } else if (data.user) {
-          // Check for profile table (might not exist yet)
-          const { data: profile, error: profileError } = await supabase
+          const { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', data.user.id)
@@ -57,8 +56,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           if (profile) {
             onLogin(profile);
           } else {
-            // DATABASE INITIALIZATION FLOW:
-            // Allow login to access the setup tab if the profile is missing
             onLogin({
               id: data.user.id,
               name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Cloud Admin',
@@ -69,12 +66,12 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           }
         }
       } catch (err) {
-        setError('Connection error. Ensure your Supabase project is active.');
+        setError('Connection error. Ensure your terminal is online.');
       } finally {
         setIsLoading(false);
       }
     } else {
-      setError('System restricted. Use super@sweaterflow.com / password123 for local demo.');
+      setError('System restricted. Contact IT Support.');
       setIsLoading(false);
     }
   };
@@ -84,16 +81,16 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       try {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
         if (resetError) setError(resetError.message);
-        else setSuccess('Reset instructions sent to your email.');
+        else setSuccess('Access recovery instructions sent to your work email.');
       } catch (err) {
-        setError('Failed to initiate cloud password reset.');
+        setError('Failed to initiate cloud recovery.');
       } finally {
         setIsLoading(false);
       }
     } else {
       const user = MOCK_USERS.find(u => u.email === email);
       if (user) setSuccess(`DEMO MODE: Password is "${user.password}"`);
-      else setError('Mock email not found.');
+      else setError('Work email not found in local registry.');
       setIsLoading(false);
     }
   };
@@ -109,7 +106,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
           <h1 className="text-4xl font-black text-white tracking-tighter mb-2">SweaterFlow<span className="text-indigo-500 italic">PRO</span></h1>
           <p className="text-slate-400 font-medium uppercase tracking-[0.2em] text-[10px]">
-            {isSupabaseConfigured ? 'Enterprise Manufacturing Node' : 'Local Testing Mode'}
+            {isSupabaseConfigured ? 'Enterprise Manufacturing Node' : 'Demo Terminal Mode'}
           </p>
         </div>
 
@@ -119,20 +116,20 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
               {isResetMode ? 'Security Recovery' : 'Workforce Login'}
             </h2>
             <p className="text-xs text-slate-400 mt-1 font-medium italic">
-              Access the factory floor control system.
+              {isResetMode ? 'Enter email to receive recovery instructions.' : 'Access the factory floor control system.'}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Terminal Email</label>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Work Email</label>
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
                 <input 
                   required
                   type="email" 
                   className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
-                  placeholder="user@sweaterflow.com"
+                  placeholder="name@factory.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -143,7 +140,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <div>
                 <div className="flex justify-between items-center mb-2 ml-1">
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Secret Key</label>
-                  <button type="button" onClick={() => setIsResetMode(true)} className="text-[10px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest">Lost Key?</button>
+                  <button type="button" onClick={() => setIsResetMode(true)} className="text-[10px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest">Forgot Key?</button>
                 </div>
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
@@ -155,6 +152,18 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
+                </div>
+              </div>
+            )}
+
+            {isResetMode && (
+              <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-start gap-3 text-indigo-300">
+                <UserCog size={18} className="shrink-0 mt-0.5 text-indigo-400" />
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest">Worker Tip</p>
+                  <p className="text-xs font-medium leading-relaxed">
+                    If you don't have access to email, please contact your <b>Production Manager</b> to manually reset your access key from the Admin Dashboard.
+                  </p>
                 </div>
               </div>
             )}
@@ -178,12 +187,16 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
               disabled={isLoading}
               className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
             >
-              {isLoading ? <Loader2 size={20} className="animate-spin" /> : <>{isResetMode ? 'Recover' : 'Log Into Factory'} <ArrowRight size={18} /></>}
+              {isLoading ? <Loader2 size={20} className="animate-spin" /> : <>{isResetMode ? 'Initiate Recovery' : 'Authorize Session'} <ArrowRight size={18} /></>}
             </button>
 
             {isResetMode && (
-              <button onClick={() => setIsResetMode(false)} className="w-full text-center text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">
-                Return to terminal
+              <button 
+                type="button"
+                onClick={() => setIsResetMode(false)} 
+                className="w-full flex items-center justify-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
+              >
+                <ArrowLeft size={14} /> Back to Terminal Login
               </button>
             )}
           </form>
@@ -192,7 +205,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="mt-8 text-center">
           <div className="flex items-center justify-center gap-2 text-slate-600 mb-2">
             <KeyRound size={12} />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em]">Encrypted Session Active</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em]">Encrypted Workforce Node</p>
           </div>
         </div>
       </div>

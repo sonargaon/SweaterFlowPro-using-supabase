@@ -94,10 +94,25 @@ export const ReportManager: React.FC<ReportManagerProps> = ({
     const yarnWastageLbs = Math.max(0, totalYarnReceived - projectedYarnUsed);
     const yarnWastagePercent = totalYarnReceived > 0 ? (yarnWastageLbs / totalYarnReceived) * 100 : 0;
 
+    // Fix: replaced trimmingMendingCost with trimmingCost and mendingCost, and added all other costing components
     const unitCost = styleSample ? (
       (styleSample.yarnRequiredLbs * styleSample.yarnPricePerLbs) + 
-      styleSample.knittingCost + styleSample.linkingCost + styleSample.trimmingMendingCost +
-      styleSample.washingCost + styleSample.sewingCosting + styleSample.overheadCost
+      styleSample.knittingCost + 
+      styleSample.linkingCost + 
+      styleSample.trimmingCost + 
+      styleSample.mendingCost +
+      styleSample.washingCost + 
+      styleSample.sewingCosting + 
+      styleSample.pqcCosting +
+      styleSample.ironCosting +
+      styleSample.getupCosting +
+      styleSample.packingCosting +
+      styleSample.boilerGas +
+      styleSample.overheadCost +
+      styleSample.others1 +
+      styleSample.others2 +
+      styleSample.others3 +
+      styleSample.others4
     ) : 0;
 
     const rejectionCostImpact = totalLostUnits * unitCost;
@@ -314,7 +329,6 @@ export const ReportManager: React.FC<ReportManagerProps> = ({
               <div className="flex items-center gap-4">
                 <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-600"><CheckCircle2 size={18}/></div>
                 <div className="min-w-[120px]">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Processing</p>
                   <p className="text-base font-black text-slate-800 uppercase">Finishing</p>
                 </div>
               </div>

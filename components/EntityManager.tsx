@@ -1,18 +1,22 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Customer, Supplier } from '../types';
 import { Users, Truck, Mail, Phone, MapPin, DollarSign, Plus, X, Tag, User, Briefcase } from 'lucide-react';
 
 interface EntityManagerProps {
+  initialView?: 'customers' | 'suppliers';
   customers: Customer[];
   suppliers: Supplier[];
   onAddCustomer: (customer: Customer) => void;
   onAddSupplier: (supplier: Supplier) => void;
 }
 
-export const EntityManager: React.FC<EntityManagerProps> = ({ customers, suppliers, onAddCustomer, onAddSupplier }) => {
-  const [view, setView] = useState<'customers' | 'suppliers'>('customers');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+export const EntityManager: React.FC<EntityManagerProps> = ({ initialView = 'customers', customers, suppliers, onAddCustomer, onAddSupplier }) => {
+  const [view, setView] = useState<'customers' | 'suppliers'>(initialView);
+
+  useEffect(() => {
+    setView(initialView);
+  }, [initialView]);
 
   // New Entity States
   const [newCustomer, setNewCustomer] = useState<Partial<Customer>>({
@@ -53,6 +57,8 @@ export const EntityManager: React.FC<EntityManagerProps> = ({ customers, supplie
     }
     setIsModalOpen(false);
   };
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Database, CloudSync, Menu, ShoppingCart, Users, Truck, Wallet, 
   FlaskConical, ClipboardCheck, BarChart3, LogOut, ShieldCheck, Loader2, AlertTriangle, 
-  Settings, Terminal, Wand2
+  Settings, Terminal, Wand2, Building2
 } from 'lucide-react';
 import { Department, ProductionOrder, BusinessModule, PurchaseOrder, Transaction, Customer, Supplier, SampleDevelopment as SampleType, InspectionRecord, LinkingRecord, User, UserRole } from './types';
 import { DEPARTMENTS_CONFIG, MOCK_ORDERS, MOCK_CUSTOMERS, MOCK_SUPPLIERS, MOCK_PURCHASES, MOCK_TRANSACTIONS, MOCK_SAMPLES, MOCK_INSPECTIONS, MOCK_LINKING, MOCK_USERS } from './constants';
@@ -50,7 +50,7 @@ const App: React.FC = () => {
           setCustomers(MOCK_CUSTOMERS);
           setSuppliers(MOCK_SUPPLIERS);
           setTransactions(MOCK_TRANSACTIONS);
-          setSamples(MOCK_SAMPLES);
+          setSamples(MOCK_SAMPLES.map(s => ({...s, trimmingCost: 0, mendingCost: 0, others1: 0, others2: 0, others3: 0, others4: 0})));
           setInspections(MOCK_INSPECTIONS);
           setLinkingRecords(MOCK_LINKING);
           setUsers(MOCK_USERS);
@@ -111,7 +111,31 @@ const App: React.FC = () => {
       if (c.data) setCustomers(c.data.map((x: any) => ({ ...x, totalOrders: x.total_orders })));
       if (s.data) setSuppliers(s.data.map((x: any) => ({ ...x, contactPerson: x.contact_person })));
       if (t.data) setTransactions(t.data.map((x: any) => ({ ...x, entityId: x.entity_id, entityName: x.entity_name, styleNumbers: x.style_numbers })));
-      if (smp.data) setSamples(smp.data.map((x: any) => ({ ...x, styleNumber: x.style_number, yarnType: x.yarn_type, yarnCount: x.yarn_count, yarnRequiredLbs: x.yarn_required_lbs, yarnPricePerLbs: x.yarn_price_per_lbs, knittingTime: x.knitting_time, knittingCost: x.knitting_cost, linkingCost: x.linking_cost, trimmingMendingCost: x.trimming_mending_cost, sewingCosting: x.sewing_costing, washingCost: x.washing_cost, pqcCosting: x.pqc_costing, ironCosting: x.iron_costing, getupCosting: x.getup_costing, packingCosting: x.packing_costing, boilerGas: x.boiler_gas, overheadCost: x.overhead_cost })));
+      if (smp.data) setSamples(smp.data.map((x: any) => ({ 
+        ...x, 
+        styleNumber: x.style_number, 
+        yarnType: x.yarn_type, 
+        yarnCount: x.yarn_count, 
+        yarnRequiredLbs: x.yarn_required_lbs, 
+        yarnPricePerLbs: x.yarn_price_per_lbs, 
+        knittingTime: x.knitting_time, 
+        knittingCost: x.knitting_cost, 
+        linkingCost: x.linking_cost, 
+        trimmingCost: x.trimming_cost,
+        mendingCost: x.mending_cost,
+        sewingCosting: x.sewing_costing, 
+        washingCost: x.washing_cost, 
+        pqcCosting: x.pqc_costing, 
+        ironCosting: x.iron_costing, 
+        getupCosting: x.getup_costing, 
+        packingCosting: x.packing_costing, 
+        boilerGas: x.boiler_gas, 
+        overheadCost: x.overhead_cost,
+        others1: x.others1,
+        others2: x.others2,
+        others3: x.others3,
+        others4: x.others4
+      })));
       if (i.data) setInspections(i.data.map((x: any) => ({ ...x, operatorId: x.operator_id, machineNo: x.machine_no, buyerName: x.buyer_name, styleNumber: x.style_number, totalDelivered: x.total_delivered, knittingCompletedQty: x.knitting_completed_qty, qualityPassed: x.quality_passed, rejectionRate: x.rejection_rate, orderNumber: x.order_number })));
       if (l.data) setLinkingRecords(l.data.map((x: any) => ({ ...x, operatorId: x.operator_id, buyerName: x.buyer_name, styleNumber: x.style_number, orderNumber: x.order_number, totalQuantity: x.total_quantity, operatorCompletedQty: x.operator_completed_qty, completedQty: x.completed_qty })));
       if (pr.data) setUsers(pr.data);
@@ -125,22 +149,36 @@ const App: React.FC = () => {
     setCurrentUser(null);
   };
 
+  // State Update Helpers
+  const addCustomer = (c: Customer) => setCustomers([...customers, c]);
+  const addSupplier = (s: Supplier) => setSuppliers([...suppliers, s]);
+  const addOrder = (o: ProductionOrder) => setOrders([...orders, o]);
+  const addSample = (s: SampleType) => setSamples([...samples, s]);
+  const addInspection = (i: InspectionRecord) => setInspections([...inspections, i]);
+  const addPurchase = (p: PurchaseOrder) => setPurchases([...purchases, p]);
+  const addTransaction = (t: Transaction) => setTransactions([...transactions, t]);
+  const addLinking = (l: LinkingRecord) => setLinkingRecords([...linkingRecords, l]);
+  const addUser = (u: User) => setUsers([...users, u]);
+  const updateUser = (u: User) => setUsers(users.map(user => user.id === u.id ? u : user));
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard orders={orders} />;
       case 'design-studio': return <DesignStudio />;
       case 'reports': return <ReportManager orders={orders} transactions={transactions} purchases={purchases} inspections={inspections} customers={customers} suppliers={suppliers} samples={samples} linkingRecords={linkingRecords} />;
-      case 'user-management': return <UserManagement users={users} onAddUser={() => {}} />;
+      case 'user-management': return <UserManagement users={users} onAddUser={addUser} onUpdateUser={updateUser} />;
       case 'system-setup': return <SystemSetup />;
-      case 'sample-development': return <SampleDevelopment samples={samples} onAddSample={() => {}} />;
-      case 'qc-passed': return <QCPassedSummary orders={orders} inspections={inspections} customers={customers} onAddInspection={() => {}} />;
-      case 'finance': return <FinanceManager transactions={transactions} customers={customers} suppliers={suppliers} orders={orders} purchases={purchases} inspections={inspections} onAddTransaction={() => {}} />;
-      case 'procurement': return <ProcurementManager purchases={purchases} suppliers={suppliers} orders={orders} onAddPurchase={() => {}} />;
-      case 'entities': return <EntityManager customers={customers} suppliers={suppliers} onAddCustomer={() => {}} onAddSupplier={() => {}} />;
-      case 'sales': return <SalesManager orders={orders} customers={customers} samples={samples} inspections={inspections} onAddOrder={() => {}} onAddInspection={() => {}} />;
+      case 'sample-development': return <SampleDevelopment samples={samples} onAddSample={addSample} />;
+      case 'qc-passed': return <QCPassedSummary orders={orders} inspections={inspections} customers={customers} onAddInspection={addInspection} />;
+      case 'finance': return <FinanceManager transactions={transactions} customers={customers} suppliers={suppliers} orders={orders} purchases={purchases} inspections={inspections} onAddTransaction={addTransaction} />;
+      case 'procurement': return <ProcurementManager purchases={purchases} suppliers={suppliers} orders={orders} onAddPurchase={addPurchase} />;
+      case 'customers': return <EntityManager initialView="customers" customers={customers} suppliers={suppliers} onAddCustomer={addCustomer} onAddSupplier={addSupplier} />;
+      case 'suppliers': return <EntityManager initialView="suppliers" customers={customers} suppliers={suppliers} onAddCustomer={addCustomer} onAddSupplier={addSupplier} />;
+      case 'entities': return <EntityManager initialView="customers" customers={customers} suppliers={suppliers} onAddCustomer={addCustomer} onAddSupplier={addSupplier} />;
+      case 'sales': return <SalesManager orders={orders} customers={customers} samples={samples} inspections={inspections} onAddOrder={addOrder} onAddInspection={addInspection} />;
       default: 
         if (Object.values(Department).includes(activeTab as any)) {
-          return <DepartmentManager deptId={activeTab as Department} orders={orders} customers={customers} samples={samples} purchases={purchases} onUpdateOrder={() => {}} onAddOrder={() => {}} />;
+          return <DepartmentManager deptId={activeTab as Department} orders={orders} customers={customers} samples={samples} purchases={purchases} onUpdateOrder={() => {}} onAddOrder={addOrder} />;
         }
         return <Dashboard orders={orders} />;
     }
@@ -177,8 +215,9 @@ const App: React.FC = () => {
       items: [
         { id: 'sales', label: 'Sales Orders', icon: <ShoppingCart size={18} /> },
         { id: 'procurement', label: 'Procurement', icon: <Truck size={18} /> },
+        { id: 'customers', label: 'Customers', icon: <Users size={18} /> },
+        { id: 'suppliers', label: 'Suppliers', icon: <Building2 size={18} /> },
         { id: 'finance', label: 'Finance', icon: <Wallet size={18} /> },
-        { id: 'entities', label: 'Network', icon: <Users size={18} /> },
       ]
     }
   ];

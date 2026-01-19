@@ -25,7 +25,7 @@ export interface User {
   lastLogin?: string;
 }
 
-export type BusinessModule = 'dashboard' | Department | 'sales' | 'procurement' | 'finance' | 'entities' | 'sample-development' | 'qc-passed' | 'reports' | 'user-management' | 'system-setup' | 'design-studio';
+export type BusinessModule = 'dashboard' | Department | 'sales' | 'procurement' | 'finance' | 'entities' | 'customers' | 'suppliers' | 'sample-development' | 'qc-passed' | 'reports' | 'user-management' | 'system-setup' | 'design-studio';
 
 export interface Customer {
   id: string;
@@ -56,7 +56,8 @@ export interface SampleDevelopment {
   knittingTime: number; 
   knittingCost: number;
   linkingCost: number;
-  trimmingMendingCost: number;
+  trimmingCost: number;
+  mendingCost: number;
   sewingCosting: number;
   washingCost: number;
   pqcCosting: number;
@@ -65,6 +66,13 @@ export interface SampleDevelopment {
   packingCosting: number;
   boilerGas: number;
   overheadCost: number;
+  others1: number;
+  others2: number;
+  others3: number;
+  others4: number;
+  notes?: string;
+  constructionNotes?: string;
+  packagingNotes?: string;
 }
 
 export interface InspectionRecord {

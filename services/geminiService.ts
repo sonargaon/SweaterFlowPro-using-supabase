@@ -1,18 +1,18 @@
+
 import { GoogleGenAI } from "@google/genai";
 
-export const analyzeProductionData = async (orders: any[]) => {
-  // Use process.env.API_KEY as per standard coding guidelines. 
-  // It is shimmed in index.html for browser safety.
+const getApiKey = () => {
   const apiKey = process.env.API_KEY;
+  if (!apiKey || apiKey === 'undefined' || apiKey === '') return null;
+  return apiKey;
+};
 
-  if (!apiKey || apiKey === 'undefined' || apiKey === '') {
-    console.warn("Gemini API Key is not set in environment.");
-    return null;
-  }
+export const analyzeProductionData = async (orders: any[]) => {
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-
     const prompt = `
       Analyze the following sweater manufacturing production data and provide a brief executive summary:
       ${JSON.stringify(orders)}
@@ -27,22 +27,50 @@ export const analyzeProductionData = async (orders: any[]) => {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
-      config: {
-        responseMimeType: "application/json"
-      }
+      config: { responseMimeType: "application/json" }
     });
 
-    const text = response.text;
-    if (!text) return null;
-
-    try {
-      return JSON.parse(text);
-    } catch (parseError) {
-      console.error("Gemini JSON Parse Error:", text);
-      return null;
-    }
+    return response.text ? JSON.parse(response.text) : null;
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
+    return null;
+  }
+};
+
+export const analyzeStyleRisk = async (techPack: any) => {
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const prompt = `
+      As a Senior Manufacturing Engineer, audit this sweater Tech-Pack for production risks:
+      Style: ${techPack.styleNumber}
+      Yarn: ${techPack.yarnType} (${techPack.yarnCount})
+      Notes: ${techPack.constructionNotes}
+      Costing Breakdown: $${techPack.totalCost}
+      
+      Analyze for:
+      1. Material Compatibility (Yarn vs likely gauge)
+      2. Bottleneck Prediction (Linking or Finishing complexity)
+      3. Quality Risks
+      
+      Format response as JSON:
+      - riskLevel: "Low" | "Medium" | "High"
+      - riskScore: number (0-100)
+      - technicalAlerts: string[]
+      - mitigationSteps: string[]
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: { responseMimeType: "application/json" }
+    });
+
+    return response.text ? JSON.parse(response.text) : null;
+  } catch (error) {
+    console.error("Risk Analysis Error:", error);
     return null;
   }
 };

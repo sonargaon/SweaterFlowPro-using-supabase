@@ -122,7 +122,9 @@ export const MOCK_SAMPLES: SampleDevelopment[] = [
     knittingTime: 45,
     knittingCost: 4.50,
     linkingCost: 3.20,
-    trimmingMendingCost: 1.50,
+    // Fix: replaced trimmingMendingCost with trimmingCost and mendingCost
+    trimmingCost: 0.75,
+    mendingCost: 0.75,
     sewingCosting: 0.80,
     washingCost: 1.20,
     pqcCosting: 0.50,
@@ -130,7 +132,12 @@ export const MOCK_SAMPLES: SampleDevelopment[] = [
     getupCosting: 0.40,
     packingCosting: 0.60,
     boilerGas: 0.30,
-    overheadCost: 2.00
+    overheadCost: 2.00,
+    // Fix: adding missing properties from SampleDevelopment interface
+    others1: 0,
+    others2: 0,
+    others3: 0,
+    others4: 0
   }
 ];
 
