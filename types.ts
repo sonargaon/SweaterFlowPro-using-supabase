@@ -25,7 +25,7 @@ export interface User {
   lastLogin?: string;
 }
 
-export type BusinessModule = 'dashboard' | Department | 'sales' | 'procurement' | 'finance' | 'entities' | 'customers' | 'suppliers' | 'sample-development' | 'qc-passed' | 'reports' | 'user-management' | 'system-setup' | 'design-studio';
+export type BusinessModule = 'dashboard' | Department | 'sales' | 'procurement' | 'finance' | 'partners' | 'sample-development' | 'qc-passed' | 'reports' | 'user-management' | 'system-setup';
 
 export interface Customer {
   id: string;

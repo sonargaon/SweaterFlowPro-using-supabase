@@ -4,9 +4,8 @@ import { SampleDevelopment as SampleType } from '../types';
 import { 
   FlaskConical, Plus, Save, Calculator, DollarSign, Clock, FileText, 
   ChevronRight, CheckCircle2, Box, Layers, X, Info, RefreshCw, 
-  ArrowRightLeft, TrendingUp, ShieldCheck, AlertCircle, Scissors, FileEdit, Truck, ClipboardList, BrainCircuit, Loader2, Zap
+  ArrowRightLeft, TrendingUp, ShieldCheck, AlertCircle, Scissors, FileEdit, Truck, ClipboardList
 } from 'lucide-react';
-import { analyzeStyleRisk } from '../services/geminiService';
 
 interface SampleDevelopmentProps {
   samples: SampleType[];
@@ -79,8 +78,6 @@ export const SampleDevelopment: React.FC<SampleDevelopmentProps> = ({ samples, o
   const [isAdding, setIsAdding] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<number>(118.50);
   const [isBdtInputMode, setIsBdtInputMode] = useState(false);
-  const [isAuditing, setIsAuditing] = useState(false);
-  const [auditResult, setAuditResult] = useState<any>(null);
 
   const [newSample, setNewSample] = useState<Partial<SampleType>>({
     styleNumber: '',
@@ -136,17 +133,6 @@ export const SampleDevelopment: React.FC<SampleDevelopmentProps> = ({ samples, o
   const totalUsd = useMemo(() => selectedSample ? calculateTotal(selectedSample) : 0, [selectedSample, calculateTotal]);
   const totalBdt = totalUsd * exchangeRate;
 
-  const runAudit = async () => {
-    if (!selectedSample?.constructionNotes) return;
-    setIsAuditing(true);
-    const result = await analyzeStyleRisk({
-      ...selectedSample,
-      totalCost: totalUsd
-    });
-    setAuditResult(result);
-    setIsAuditing(false);
-  };
-
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSample.styleNumber) return;
@@ -201,7 +187,7 @@ export const SampleDevelopment: React.FC<SampleDevelopmentProps> = ({ samples, o
             <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
               <div>
                 <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">{selectedSample.styleNumber}</h3>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1 text-indigo-600">Enterprise Tech Pack Auditor Enabled</p>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Master Tech Pack Analysis</p>
               </div>
               <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
                 <div className="flex flex-col pr-4 border-r border-slate-100">
@@ -256,75 +242,11 @@ export const SampleDevelopment: React.FC<SampleDevelopmentProps> = ({ samples, o
                 </div>
               </div>
 
-              {/* Enterprise Feature: AI Risk Auditor */}
-              <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden">
-                <div className="absolute right-0 top-0 p-8 opacity-5"><BrainCircuit size={160} /></div>
-                <div className="relative z-10">
-                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-                      <div>
-                        <h4 className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
-                          <BrainCircuit className="text-indigo-400" /> AI Production Guardrail
-                        </h4>
-                        <p className="text-slate-400 text-sm mt-1">Intelligent Tech-Pack audit based on construction complexity</p>
-                      </div>
-                      <button 
-                        onClick={runAudit}
-                        disabled={isAuditing || !selectedSample.constructionNotes}
-                        className="flex items-center gap-2 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-500 transition-all disabled:opacity-50"
-                      >
-                        {isAuditing ? <Loader2 size={18} className="animate-spin" /> : <><Zap size={16} /> Audit Tech Pack</>}
-                      </button>
-                   </div>
-
-                   {!auditResult ? (
-                     <div className="p-8 border-2 border-dashed border-white/10 rounded-3xl text-center text-slate-500">
-                        <p className="text-sm font-medium">Input Construction Details below to enable risk forecasting.</p>
-                     </div>
-                   ) : (
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in zoom-in-95 duration-300">
-                        <div className="space-y-4">
-                           <div className="flex justify-between items-end mb-2">
-                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Calculated Risk Profile</span>
-                             <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase ${
-                               auditResult.riskLevel === 'High' ? 'bg-rose-500 text-white' : 
-                               auditResult.riskLevel === 'Medium' ? 'bg-amber-500 text-white' : 'bg-emerald-500 text-white'
-                             }`}>{auditResult.riskLevel} RISK</span>
-                           </div>
-                           <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                              <div className={`h-full transition-all duration-1000 ${
-                                auditResult.riskLevel === 'High' ? 'bg-rose-500' : 
-                                auditResult.riskLevel === 'Medium' ? 'bg-amber-500' : 'bg-emerald-500'
-                              }`} style={{ width: `${auditResult.riskScore}%` }}></div>
-                           </div>
-                           <div className="space-y-2 mt-6">
-                              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Technical Alerts</p>
-                              {auditResult.technicalAlerts.map((a: string, i: number) => (
-                                <div key={i} className="flex gap-2 text-xs text-slate-300">
-                                  <AlertCircle size={14} className="text-rose-400 shrink-0" /> {a}
-                                </div>
-                              ))}
-                           </div>
-                        </div>
-                        <div className="bg-white/5 p-6 rounded-3xl border border-white/10">
-                           <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-4">Guardrail Mitigation Steps</p>
-                           <ul className="space-y-3">
-                              {auditResult.mitigationSteps.map((s: string, i: number) => (
-                                <li key={i} className="flex items-start gap-3 text-xs text-slate-400 font-medium">
-                                   <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" /> {s}
-                                </li>
-                              ))}
-                           </ul>
-                        </div>
-                     </div>
-                   )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-slate-100 pt-10">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-slate-500">
                     <ClipboardList size={16} className="text-indigo-500" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Construction Details (Audit Input)</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Construction Details</span>
                   </div>
                   <textarea 
                     className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-medium focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none min-h-[140px]"
@@ -347,7 +269,7 @@ export const SampleDevelopment: React.FC<SampleDevelopmentProps> = ({ samples, o
                 </div>
               </div>
 
-              <div className="mt-16 bg-white rounded-[2.5rem] border border-slate-200 p-10 flex flex-col md:flex-row justify-between items-center gap-10">
+              <div className="mt-16 bg-white rounded-[2.5rem] border border-slate-200 p-10 flex flex-col md:flex-row justify-between items-center gap-10 shadow-sm">
                 <div>
                   <p className="text-indigo-600 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Standard Unit Costing</p>
                   <div className="flex items-baseline gap-3">

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Database, CloudSync, Menu, ShoppingCart, Users, Truck, Wallet, 
   FlaskConical, ClipboardCheck, BarChart3, LogOut, ShieldCheck, Loader2, AlertTriangle, 
-  Settings, Terminal, Wand2, Building2
+  Settings, Terminal, Wand2, Building2, UserCircle
 } from 'lucide-react';
 import { Department, ProductionOrder, BusinessModule, PurchaseOrder, Transaction, Customer, Supplier, SampleDevelopment as SampleType, InspectionRecord, LinkingRecord, User, UserRole } from './types';
 import { DEPARTMENTS_CONFIG, MOCK_ORDERS, MOCK_CUSTOMERS, MOCK_SUPPLIERS, MOCK_PURCHASES, MOCK_TRANSACTIONS, MOCK_SAMPLES, MOCK_INSPECTIONS, MOCK_LINKING, MOCK_USERS } from './constants';
@@ -22,7 +22,6 @@ import { ReportManager } from './components/ReportManager';
 import { Login } from './components/Login';
 import { UserManagement } from './components/UserManagement';
 import { SystemSetup } from './components/SystemSetup';
-import { DesignStudio } from './components/DesignStudio';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -149,7 +148,6 @@ const App: React.FC = () => {
     setCurrentUser(null);
   };
 
-  // State Update Helpers
   const addCustomer = (c: Customer) => setCustomers([...customers, c]);
   const addSupplier = (s: Supplier) => setSuppliers([...suppliers, s]);
   const addOrder = (o: ProductionOrder) => setOrders([...orders, o]);
@@ -157,14 +155,12 @@ const App: React.FC = () => {
   const addInspection = (i: InspectionRecord) => setInspections([...inspections, i]);
   const addPurchase = (p: PurchaseOrder) => setPurchases([...purchases, p]);
   const addTransaction = (t: Transaction) => setTransactions([...transactions, t]);
-  const addLinking = (l: LinkingRecord) => setLinkingRecords([...linkingRecords, l]);
   const addUser = (u: User) => setUsers([...users, u]);
   const updateUser = (u: User) => setUsers(users.map(user => user.id === u.id ? u : user));
 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard orders={orders} />;
-      case 'design-studio': return <DesignStudio />;
       case 'reports': return <ReportManager orders={orders} transactions={transactions} purchases={purchases} inspections={inspections} customers={customers} suppliers={suppliers} samples={samples} linkingRecords={linkingRecords} />;
       case 'user-management': return <UserManagement users={users} onAddUser={addUser} onUpdateUser={updateUser} />;
       case 'system-setup': return <SystemSetup />;
@@ -172,9 +168,7 @@ const App: React.FC = () => {
       case 'qc-passed': return <QCPassedSummary orders={orders} inspections={inspections} customers={customers} onAddInspection={addInspection} />;
       case 'finance': return <FinanceManager transactions={transactions} customers={customers} suppliers={suppliers} orders={orders} purchases={purchases} inspections={inspections} onAddTransaction={addTransaction} />;
       case 'procurement': return <ProcurementManager purchases={purchases} suppliers={suppliers} orders={orders} onAddPurchase={addPurchase} />;
-      case 'customers': return <EntityManager initialView="customers" customers={customers} suppliers={suppliers} onAddCustomer={addCustomer} onAddSupplier={addSupplier} />;
-      case 'suppliers': return <EntityManager initialView="suppliers" customers={customers} suppliers={suppliers} onAddCustomer={addCustomer} onAddSupplier={addSupplier} />;
-      case 'entities': return <EntityManager initialView="customers" customers={customers} suppliers={suppliers} onAddCustomer={addCustomer} onAddSupplier={addSupplier} />;
+      case 'partners': return <EntityManager initialView="customers" customers={customers} suppliers={suppliers} onAddCustomer={addCustomer} onAddSupplier={addSupplier} />;
       case 'sales': return <SalesManager orders={orders} customers={customers} samples={samples} inspections={inspections} onAddOrder={addOrder} onAddInspection={addInspection} />;
       default: 
         if (Object.values(Department).includes(activeTab as any)) {
@@ -187,7 +181,7 @@ const App: React.FC = () => {
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white gap-4">
       <Loader2 size={48} className="text-indigo-500 animate-spin" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Booting Neural Engine...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Initializing Database...</p>
     </div>
   );
 
@@ -198,7 +192,6 @@ const App: React.FC = () => {
       title: 'General',
       items: [
         { id: 'dashboard', label: 'Overview', icon: <LayoutDashboard size={18} /> },
-        { id: 'design-studio', label: 'AI Design Studio', icon: <Wand2 size={18} className="text-indigo-400" /> },
         { id: 'reports', label: 'Intelligence', icon: <BarChart3 size={18} /> },
         { id: 'sample-development', label: 'R&D Costing', icon: <FlaskConical size={18} /> }
       ]
@@ -215,8 +208,7 @@ const App: React.FC = () => {
       items: [
         { id: 'sales', label: 'Sales Orders', icon: <ShoppingCart size={18} /> },
         { id: 'procurement', label: 'Procurement', icon: <Truck size={18} /> },
-        { id: 'customers', label: 'Customers', icon: <Users size={18} /> },
-        { id: 'suppliers', label: 'Suppliers', icon: <Building2 size={18} /> },
+        { id: 'partners', label: 'Business Partners', icon: <UserCircle size={18} /> },
         { id: 'finance', label: 'Finance', icon: <Wallet size={18} /> },
       ]
     }
